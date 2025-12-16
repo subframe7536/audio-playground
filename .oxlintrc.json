@@ -13,19 +13,6 @@
     "correctness": "error",
     "perf": "error"
   },
-  "overrides": [
-    {
-      "files": [
-        "*.tsx"
-      ],
-      "jsPlugins": [
-        "eslint-plugin-solid"
-      ],
-      "rules": {
-        "solid/reactivity": "warn"
-      }
-    }
-  ],
   "rules": {
     "curly": [
       "error",
