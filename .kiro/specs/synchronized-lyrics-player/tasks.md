@@ -1,10 +1,11 @@
 # Implementation Plan
 
-- [ ] 1. Set up core services and interfaces
-  - Create AudioService wrapper around audio0 ZAudio with playback controls
-  - Create LyricsService that integrates with existing parseLyric utility
-  - Create MetadataService wrapper around node-taglib-sharp-extend
-  - Define TypeScript interfaces for PlayerState, AudioMetadata, and LyricState
+- [ ] 1. Set up PlayerProvider context and pure utility functions
+  - Create PlayerProvider component with createContext for state management
+  - Create usePlayerContext hook for accessing player state and actions
+  - Implement pure functions: parseMetadata(), parseLyric(), findActiveLyric(), formatTime()
+  - Define TypeScript interfaces for PlayerState, PlayerActions, and PlayerContextValue
+  - Set up reactive state management with createSignal, createStore, and createContext
   - _Requirements: 1.1, 3.2, 5.1_
 
 - [ ]* 1.1 Write property test for lyric parsing and display
@@ -35,7 +36,7 @@
   - Create ProgressBar component with seek functionality
   - Build TimeDisplay component for current time and duration
   - Add previous/next buttons using Lucide icons
-  - Wire up all controls to AudioService actions
+  - Wire up all controls using usePlayerContext hook
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
 - [ ]* 3.1 Write property test for control button functionality
@@ -111,9 +112,8 @@
   - **Validates: Requirements 5.2, 5.3**
 
 - [ ] 8. Integrate all components in MusicPlayerApp
-  - Create main MusicPlayerApp component container
-  - Set up reactive state management with createSignal and createStore
-  - Wire up all component interactions and data flow
+  - Create main MusicPlayerApp component that wraps everything in PlayerProvider
+  - Wire up all component interactions through PlayerContext
   - Implement error handling for audio loading, lyrics parsing, and metadata extraction
   - Add performance optimizations like memoized components and debounced updates
   - _Requirements: All requirements integration_

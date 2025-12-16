@@ -26,26 +26,38 @@ The system follows a reactive component architecture using SolidJS patterns:
 └─────────────────────────────────────────┘
 ```
 
-### Core Services Layer
+### Core Hook and Utilities
 
 ```
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│  AudioService   │ │  LyricsService  │ │ MetadataService │
-│                 │ │                 │ │                 │
-│ - ZAudio        │ │ - parseLyric()  │ │ - parseMetadata │
-│ - playback      │ │ - sync logic    │ │ - artwork       │
-│ - time tracking │ │ - line matching │ │ - track info    │
-└─────────────────┘ └─────────────────┘ └─────────────────┘
+┌─────────────────────────────────────────┐
+│              usePlayer Hook             │
+│                                         │
+│ - ZAudio integration                    │
+│ - Reactive state management             │
+│ - Time tracking & synchronization       │
+│ - Metadata & lyrics coordination        │
+└─────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────┐
+│            Pure Functions               │
+│                                         │
+│ - parseMetadata() - extract audio info  │
+│ - parseLyric() - process LRC content    │
+│ - findActiveLyric() - time matching     │
+│ - formatTime() - display utilities      │
+└─────────────────────────────────────────┘
 ```
 
 ## Components and Interfaces
 
-### MusicPlayerApp Component
+### PlayerContext and Provider
 
-Main container component that orchestrates the entire player interface.
+Context-based state management that provides player state and actions to all child components.
 
 ```typescript
-interface MusicPlayerProps {
+interface PlayerProviderProps {
+  children: JSX.Element
   audioFile?: File
   lyricsContent?: string
   autoPlay?: boolean
@@ -59,37 +71,39 @@ interface PlayerState {
   activeLyricIndex: number
   metadata: AudioMetadata | null
   artwork: string | null
+  lyrics: LrcObj[]
 }
+
+interface PlayerActions {
+  play: () => void
+  pause: () => void
+  seek: (time: number) => void
+  setVolume: (volume: number) => void
+}
+
+type PlayerContextValue = readonly [PlayerState, PlayerActions]
+
+// Context and hook
+const PlayerContext = createContext<PlayerContextValue>()
+function usePlayerContext(): PlayerContextValue
 ```
 
 ### AudioControls Component
 
-Handles playback controls and progress display.
+Handles playback controls and progress display. Uses PlayerContext for state and actions.
 
 ```typescript
-interface AudioControlsProps {
-  isPlaying: boolean
-  currentTime: number
-  duration: number
-  onPlay: () => void
-  onPause: () => void
-  onSeek: (time: number) => void
-  onPrevious?: () => void
-  onNext?: () => void
-}
+// No props needed - gets data from context
+interface AudioControlsProps {}
 ```
 
 ### LyricsDisplay Component
 
-Manages synchronized lyrics rendering and animations.
+Manages synchronized lyrics rendering and animations. Uses PlayerContext for state and actions.
 
 ```typescript
-interface LyricsDisplayProps {
-  lyrics: LrcObj[]
-  currentTime: number
-  activeLyricIndex: number
-  onLyricClick?: (index: number) => void
-}
+// No props needed - gets data from context
+interface LyricsDisplayProps {}
 
 interface LyricLineProps {
   lyric: LrcObj
@@ -101,14 +115,22 @@ interface LyricLineProps {
 
 ### BackgroundLayer Component
 
-Handles blurred artwork background and visual effects.
+Handles blurred artwork background and visual effects. Uses PlayerContext for artwork.
 
 ```typescript
 interface BackgroundLayerProps {
-  artworkUrl: string | null
   opacity?: number
   blurIntensity?: number
 }
+```
+
+### MetadataDisplay Component
+
+Displays track information and time. Uses PlayerContext for metadata and time.
+
+```typescript
+// No props needed - gets data from context
+interface MetadataDisplayProps {}
 ```
 
 ## Data Models
@@ -122,18 +144,27 @@ interface AudioMetadata {
   album: string
   duration: number
   artwork?: string
+  lyrics?: LrcObj[] // Lyrics are part of metadata
 }
 ```
 
-### LyricState
+### Pure Function Signatures
 
 ```typescript
-interface LyricState {
-  lyrics: LrcObj[]
-  activeLyricIndex: number
-  isAutoScrollEnabled: boolean
-  userScrollTimeout: number | null
-}
+// Metadata extraction
+function parseMetadata(file: File): Promise<AudioMetadata>
+
+// Lyric processing
+function parseLyric(content: string): LrcObj[]
+function findActiveLyric(lyrics: LrcObj[], currentTime: number): number
+
+// Time utilities
+function formatTime(seconds: number): string
+function parseTimeToSeconds(timeString: string): number
+
+// Animation utilities
+function calculateStaggerDelay(index: number, baseDelay: number): number
+function getAnimationTimings(): { lineMovement: number; highlighting: number; fading: number }
 ```
 
 ### AnimationState
@@ -269,30 +300,62 @@ Each property-based test will run a minimum of 100 iterations to ensure comprehe
 ## Implementation Architecture
 
 ### State Management
-Using SolidJS reactive primitives:
-- `createSignal()` for simple state like current time, play state
-- `createStore()` for complex objects like lyrics array, metadata
-- `createMemo()` for derived values like active lyric index
-- `createEffect()` for side effects like audio time updates
+The `PlayerProvider` component encapsulates all state management using SolidJS reactive primitives:
+- `createSignal()` for simple state like current time, play state, volume
+- `createStore()` for complex objects like metadata and lyrics array
+- `createMemo()` for derived values like active lyric index and formatted time
+- `createEffect()` for side effects like audio time updates and lyric synchronization
+- `createContext()` to share state across the component tree without prop drilling
+
+Pure functions handle all data transformations without side effects, making the system predictable and testable.
 
 ### Component Hierarchy
 ```
 MusicPlayerApp
-├── BackgroundLayer
-├── AudioControls
-│   ├── PlayButton
-│   ├── ProgressBar
-│   └── TimeDisplay
-├── MetadataDisplay
-└── LyricsDisplay
-    └── LyricLine (multiple)
+├── PlayerProvider (manages context state)
+│   ├── BackgroundLayer (uses context)
+│   ├── AudioControls (uses context)
+│   │   ├── PlayButton
+│   │   ├── ProgressBar
+│   │   └── TimeDisplay
+│   ├── MetadataDisplay (uses context)
+│   └── LyricsDisplay (uses context)
+│       └── LyricLine (multiple)
 ```
 
-### Service Integration
-- AudioService: Wraps `audio0` ZAudio for playback control
-- LyricsService: Uses existing `parseLyric` utility for LRC processing
-- MetadataService: Integrates `node-taglib-sharp-extend` for file analysis
-- AnimationService: Manages CSS transitions and timing coordination
+**Usage Pattern:**
+```typescript
+function MusicPlayerApp(props: MusicPlayerProps) {
+  return (
+    <PlayerProvider audioFile={props.audioFile} lyricsContent={props.lyricsContent}>
+      <div>
+        <BackgroundLayer />
+        <AudioControls />
+        <MetadataDisplay />
+        <LyricsDisplay />
+      </div>
+    </PlayerProvider>
+  )
+}
+
+// Components access context directly
+function AudioControls() {
+  const [state, actions] = usePlayerContext()
+  return (
+    <div>
+      <button onClick={actions.play}>
+        {state.isPlaying ? 'Pause' : 'Play'}
+      </button>
+    </div>
+  )
+}
+```
+
+### Context and Function Integration
+- PlayerProvider: Context provider that manages centralized reactive state integrating `audio0` ZAudio, metadata extraction, and lyric synchronization
+- usePlayerContext: Hook for accessing player state and actions from any child component
+- Pure Functions: Stateless utilities for metadata parsing, lyric processing, time formatting, and synchronization logic
+- Animation Utilities: Pure functions for calculating animation timing and transitions
 
 ### Performance Considerations
 - Virtual scrolling for large lyric sets
