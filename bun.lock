@@ -12,7 +12,7 @@
         "@unocss/reset": "^66.5.10",
         "@unocss/transformer-variant-group": "^66.5.10",
         "@unocss/vite": "^66.5.10",
-        "audio0": "^0.4.0",
+        "audio0": "^0.5.1",
         "bumpp": "^10.3.2",
         "node-taglib-sharp-extend": "^0.3.2",
         "oxlint": "^1.32.0",
@@ -273,7 +273,7 @@
 
     "assertion-error": ["assertion-error@2.0.1", "", {}, "sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA=="],
 
-    "audio0": ["audio0@0.4.0", "", { "dependencies": { "zen-mitt": "^3.1.0" } }, "sha512-NROb2CVV2HOTc0Tjp/4vmhjBtf3ezTPsz+DmitBp34IFEsMwHSjLntCMKDND2z7lUUHXemX6xmovNHyjEMqIUg=="],
+    "audio0": ["audio0@0.5.1", "https://registry.npmmirror.com/audio0/-/audio0-0.5.1.tgz", { "dependencies": { "zen-mitt": "^3.1.0" } }, "sha512-Yt0WF3PUxZ5JwVdSFBdc1FDpdEDzQrFQvNizaLrvu/XUNXqPRthhf1pv7J+4+h89zU0BzgEfzecJiuFNGrcn4Q=="],
 
     "available-typed-arrays": ["available-typed-arrays@1.0.7", "", { "dependencies": { "possible-typed-array-names": "^1.0.0" } }, "sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ=="],
 

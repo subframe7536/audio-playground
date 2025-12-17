@@ -1,11 +1,19 @@
-import { createContext, useContext, createEffect, createResource, createMemo } from 'solid-js'
+import {
+  createContext,
+  useContext,
+  createEffect,
+  createResource,
+  createMemo,
+  onCleanup,
+} from 'solid-js'
 import { createStore } from 'solid-js/store'
-import { ZAudio } from 'audio0'
+import { parseTrack, ZAudio } from 'audio0'
 import type {
   PlayerState,
   PlayerActions,
   PlayerContextValue,
   PlayerProviderProps,
+  AudioMetadata,
 } from '~/types/player'
 import { parseMetadata, findActiveLyric } from '~/utils/player-utils'
 import { parseLyric } from '~/utils/parse-lyric'
@@ -78,22 +86,27 @@ export function PlayerProvider(props: PlayerProviderProps) {
         return null
       }
 
+      console.log('Processing metadata for file:', audioFile.name)
+
       try {
         const parsedMetadata = await parseMetadata(audioFile)
         if (parsedMetadata.lyric) {
           const parsedLyrics = parseLyric(parsedMetadata.lyric)
           setState('lyrics', parsedLyrics)
         }
+        console.log('Metadata parsed successfully:', parsedMetadata)
         return parsedMetadata
       } catch (error) {
         console.warn('Failed to parse metadata, using fallback values:', error)
         // Return fallback metadata
-        return {
+        const fallbackMetadata: AudioMetadata = {
           title: audioFile.name.replace(/\.[^/.]+$/, ''), // Remove file extension
           artist: 'Unknown Artist',
           album: 'Unknown Album',
           duration: 0,
         }
+        console.log('Using fallback metadata:', fallbackMetadata)
+        return fallbackMetadata
       }
     },
   )
@@ -107,13 +120,16 @@ export function PlayerProvider(props: PlayerProviderProps) {
       }
 
       try {
-        const audioUrl = URL.createObjectURL(audioFile)
-        console.log('Loading audio from URL:', audioUrl)
+        const [track, cleanup] = await parseTrack({ src: audioFile })
+        console.log('Loading audio from URL:', track, audio.codecs)
+        const result = await audio.load(track)
+        console.log('Audio load result:', result)
 
-        const result = await audio.load({ src: audioUrl }, { mimeType: 'audio/ogg' })
+        onCleanup(cleanup)
+
         // Load the audio file
         setState('isAudioReady', result)
-        return { url: audioUrl, loaded: true, isObjectUrl: true }
+        return { url: track.src, loaded: true, isObjectUrl: true }
       } catch (error) {
         console.error('Failed to load audio file:', error)
         throw new Error(
