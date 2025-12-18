@@ -23,7 +23,7 @@ function LyricLine(props: LyricLineProps) {
       onClick={props.onClick}
       data-active={props.lyricData.isActive ? '' : undefined}
       data-past={props.lyricData.isPast ? '' : undefined}
-      class="lyric-line group px-4 py-3 text-center transition-all ease-out duration-200 cursor-pointer hover:text-white/80 relative text-gray-500 text-lg opacity-60 data-[active]:(text-white text-2xl font-semibold opacity-100 scale-105) data-[past]:(text-gray-400 opacity-70)"
+      class="lyric-line group px-4 py-3 text-center transition-all ease-out duration-300 cursor-pointer hover:text-white/80 relative text-gray-500 text-lg opacity-60 data-[active]:(text-white text-2xl font-semibold opacity-100 scale-105) data-[past]:(text-gray-400 opacity-70)"
     >
       <Show when={props.lyricData.rawContent}>
         <div class="lyric-original mb-1">{props.lyricData.rawContent}</div>
@@ -34,7 +34,7 @@ function LyricLine(props: LyricLineProps) {
 
       {/* Pure CSS hover time display - only show for lyrics with valid time */}
       <Show when={props.lyricData.time >= 0}>
-        <div class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white/90 text-xs px-2 py-1 rounded backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+        <div class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white/90 text-xs px-2 py-1 rounded backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none">
           {formatTime(props.lyricData.time)}
         </div>
       </Show>
