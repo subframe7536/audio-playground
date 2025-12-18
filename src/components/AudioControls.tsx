@@ -97,11 +97,16 @@ export function AudioControls() {
           }`}
           aria-label={state.isPlaying ? 'Pause' : 'Play'}
         >
-          {state.isLoadingAudio ? (
-            <Icon name="lucide:loader-2" class="w-8 h-8 animate-spin" />
-          ) : (
-            <Icon name={state.isPlaying ? 'lucide:pause' : 'lucide:play'} class="w-8 h-8" />
-          )}
+          <Icon
+            name={
+              state.isLoadingAudio
+                ? 'lucide:loader-2'
+                : state.isPlaying
+                  ? 'lucide:pause'
+                  : 'lucide:play'
+            }
+            class={`size-8 ${state.isLoadingAudio ? 'animate-spin' : ''}`}
+          />
         </button>
 
         {/* Next Button */}

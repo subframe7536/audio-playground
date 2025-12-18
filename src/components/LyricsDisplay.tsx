@@ -45,16 +45,15 @@ function LyricLine(props: LyricLineProps) {
 export function LyricsDisplay() {
   const [state, actions] = usePlayerContext()
 
-  // Container and line element references
   const [containerRef, setContainerRef] = createSignal<HTMLDivElement>()
   const lineRefs: HTMLDivElement[] = []
 
-  // Auto-scroll state management
+  // State
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = createSignal(true)
-  const [scrollTimeout, setScrollTimeout] = createSignal<ReturnType<typeof setTimeout> | null>(null)
-  const [previousActiveIndex, setPreviousActiveIndex] = createSignal(-1)
+  const [resumeTimeout, setResumeTimeout] = createSignal<ReturnType<typeof setTimeout> | null>(null)
 
-  // Store for fine-grained reactivity - only updates individual lyric states
+  // NOTE: isProgrammaticScroll is removed completely.
+
   const [lyricsStore, setLyricsStore] = createStore<LyricLineData[]>([])
 
   // Initialize and update lyrics store when lyrics change
@@ -72,101 +71,78 @@ export function LyricsDisplay() {
     }
   })
 
-  // Update active states in store when active index changes
+  // Update active states
   createEffect(
     on(
       () => state.activeLyricIndex,
-      (activeIndex) => {
-        const prevIndex = previousActiveIndex()
-
-        // Only update if index actually changed
+      (activeIndex, prevIndex = 0) => {
         if (activeIndex !== prevIndex) {
-          // Reset previous active lyric
           if (prevIndex >= 0 && prevIndex < lyricsStore.length) {
             setLyricsStore(prevIndex, 'isActive', false)
           }
 
-          // Update all lyrics' isPast state and set new active
           lyricsStore.forEach((_, index) => {
             setLyricsStore(index, 'isPast', index < activeIndex)
             setLyricsStore(index, 'isActive', index === activeIndex)
           })
 
-          setPreviousActiveIndex(activeIndex)
+          // Only scroll if allowed
+          if (activeIndex >= 0 && isAutoScrollEnabled()) {
+            scrollToActiveLyric(activeIndex)
+          }
         }
+        return activeIndex
       },
     ),
   )
 
-  // Separate effect for early scroll trigger based on current time
-  createEffect(() => {
-    const currentTime = state.currentTime
-    const lyrics = lyricsStore
-
-    if (lyrics.length === 0 || !isAutoScrollEnabled()) {
-      return
-    }
-
-    // Find the next lyric that will become active in 250ms
-    const anticipationTime = 0.25 // 250ms in seconds
-    const targetTime = currentTime + anticipationTime
-
-    // Find the lyric that should be scrolled to
-    let targetIndex = -1
-    for (let i = 0; i < lyrics.length; i++) {
-      if (lyrics[i].time > currentTime && lyrics[i].time <= targetTime) {
-        targetIndex = i
-        break
-      }
-    }
-
-    // If we found a target and it's different from what we last scrolled to
-    const lastScrolledIndex = previousActiveIndex()
-    console.log({ lastScrolledIndex, targetIndex })
-    if (targetIndex >= 0 && targetIndex !== lastScrolledIndex) {
-      scrollToActiveLyric(targetIndex)
-    }
-  })
-
-  // Handle lyric click for seeking
   const handleLyricClick = (lyric: LyricLineData) => {
     if (lyric.time >= 0) {
       actions.seek(lyric.time)
     }
   }
 
-  // Check if lyrics are available and valid
-  const hasValidLyrics = createMemo(() => {
-    return lyricsStore.some((lyric) => lyric.time >= 0)
-  })
+  const hasValidLyrics = createMemo(() => lyricsStore.some((lyric) => lyric.time >= 0))
 
-  // Handle manual scroll detection
-  const handleScroll = () => {
-    if (!isAutoScrollEnabled()) {
-      return
+  // 1. HELPER: Schedules the auto-scroll to resume after 3 seconds
+  const scheduleResume = () => {
+    const current = resumeTimeout()
+    if (current) {
+      clearTimeout(current)
     }
 
-    // Disable auto-scroll temporarily
-    setIsAutoScrollEnabled(false)
-
-    // Clear existing timeout
-    const currentTimeout = scrollTimeout()
-    if (currentTimeout) {
-      clearTimeout(currentTimeout)
-    }
-
-    // Set new timeout to re-enable auto-scroll after 3 seconds
-    const newTimeout = setTimeout(() => {
+    const id = setTimeout(() => {
       setIsAutoScrollEnabled(true)
+      scrollToActiveLyric(state.activeLyricIndex)
     }, 3000)
 
-    setScrollTimeout(newTimeout)
+    setResumeTimeout(id)
   }
 
-  // Smooth scroll to position active lyric at 40% from top with slower animation
+  // 2. HANDLER: Specific User Interactions (The "Triggers")
+  // These events ONLY happen when the user physically does something.
+  // Programmatic scrollTo never triggers these.
+  const handleUserInteraction = () => {
+    setIsAutoScrollEnabled(false)
+    scheduleResume()
+  }
+
+  // 3. HANDLER: The Scroll Event
+  // We utilize this to keep the timer resetting if the user is
+  // dragging the scrollbar or if momentum scrolling is happening.
+  const handleScroll = () => {
+    // If auto-scroll is ALREADY disabled, it means the user is in control.
+    // We keep resetting the timer so we don't snap back while they are reading.
+    if (!isAutoScrollEnabled()) {
+      scheduleResume()
+    }
+    // If auto-scroll IS enabled, we ignore this event.
+    // It's likely our own scrollTo causing it.
+  }
+
   const scrollToActiveLyric = (activeIndex: number) => {
     const container = containerRef()
-    if (!container || !isAutoScrollEnabled() || activeIndex < 0) {
+    if (!container || activeIndex < 0) {
       return
     }
 
@@ -175,40 +151,20 @@ export function LyricsDisplay() {
       return
     }
 
-    // Calculate scroll position to place active line at 40% from top
     const containerHeight = container.clientHeight
     const lineTop = activeLine.offsetTop
     const lineHeight = activeLine.clientHeight
-    const targetPosition = containerHeight * 0.35 // 35% from top
+    const targetPosition = containerHeight * 0.35
     const scrollTop = lineTop - targetPosition + lineHeight / 2
 
-    // Custom smooth scroll with slower animation
-    const startScrollTop = container.scrollTop
-    const distance = Math.max(0, scrollTop) - startScrollTop
-    const duration = 800 // 800ms for slower animation
-    const startTime = performance.now()
-
-    const animateScroll = (currentTime: number) => {
-      const elapsed = currentTime - startTime
-      const progress = Math.min(elapsed / duration, 1)
-
-      // Ease-out cubic function for smooth deceleration
-      const easeOutCubic = 1 - Math.pow(1 - progress, 3)
-
-      const currentScrollTop = startScrollTop + distance * easeOutCubic
-      container.scrollTop = currentScrollTop
-
-      if (progress < 1) {
-        requestAnimationFrame(animateScroll)
-      }
-    }
-
-    requestAnimationFrame(animateScroll)
+    container.scrollTo({
+      top: Math.max(0, scrollTop),
+      behavior: 'smooth',
+    })
   }
 
-  // Cleanup timeout on unmount
   onCleanup(() => {
-    const timeout = scrollTimeout()
+    const timeout = resumeTimeout()
     if (timeout) {
       clearTimeout(timeout)
     }
@@ -218,7 +174,12 @@ export function LyricsDisplay() {
     <div
       ref={setContainerRef}
       class="lyrics-display flex-1 overflow-y-auto max-h-[calc(100vh-4rem)]"
+      // Attach handlers
       onScroll={handleScroll}
+      onWheel={handleUserInteraction} // Detects Mouse Wheel / Trackpad
+      onTouchStart={handleUserInteraction} // Detects Touch dragging
+      onMouseDown={handleUserInteraction} // Detects Scrollbar clicks
+      onKeyDown={handleUserInteraction} // Detects Arrow keys / Spacebar
     >
       <Show
         when={hasValidLyrics()}
