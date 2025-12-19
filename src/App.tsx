@@ -1,9 +1,9 @@
 import { createSignal, createMemo, Show, ErrorBoundary } from 'solid-js'
 import { PlayerProvider, usePlayerContext } from '~/context/player'
-import { BackgroundLayer } from '~/components/BackgroundLayer'
-import { AudioControls } from '~/components/AudioControls'
-import { MetadataDisplay } from '~/components/MetadataDisplay'
-import { LyricsDisplay } from '~/components/LyricsDisplay'
+import { BackgroundLayer } from '~/components/background-layer'
+import { AudioControls } from '~/components/audio-control'
+import { MetadataDisplay } from '~/components/metadata-display'
+import { LyricsDisplay } from '~/components/lyric-display'
 import { Icon } from '~/components/icon'
 
 // Error fallback component
