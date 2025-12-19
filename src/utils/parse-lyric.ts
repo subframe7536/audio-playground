@@ -7,26 +7,32 @@ export interface LrcObj {
 
 // 1. Static Regex to avoid recompilation
 // Matches <mm:ss.xx> or [mm:ss.xx] anywhere (for cleanup)
-const REG_TIME_TAG = /^\[\d{1,2}:\d{1,2}\.\d{1,3}\]/
+const REG_TIME_TAG = /^\[(\d{1,2}):(\d{1,2})\.(\d{1,3})\]$/
 const REG_TIME_EXTRA = /[<[]\d{1,2}:\d{1,2}\.\d{1,3}[>\]]/g
 
 /**
- * Fast parser for [mm:ss.xx] string to seconds number
+ * Fast parser for [mm:ss.xx] or [mm:ss.xxx] string to seconds number
  */
-function parseTimeTag(tag: string): number {
-  // Tag format is always [mm:ss.xx] or [mm:ss.xxx]
-  // We can use fast substring since the format is strict
-  const colonIndex = tag.indexOf(':')
-  const dotIndex = tag.indexOf('.')
+function parseTimeTag(timeString: string): number {
+  const match = timeString.match(REG_TIME_TAG)
 
-  const min = parseInt(tag.substring(1, colonIndex))
-  const sec = parseInt(tag.substring(colonIndex + 1, dotIndex))
-  const msStr = tag.substring(dotIndex + 1, tag.length - 1)
+  if (!match) {
+    throw new Error(`Invalid time format: "${timeString}"`)
+  }
 
-  // Handle 2 digit (centiseconds) vs 3 digit (milliseconds)
-  const msDivisor = msStr.length === 3 ? 1000 : 100
+  const minutes = parseInt(match[1], 10)
+  const seconds = parseInt(match[2], 10)
+  const millisecondsStr = match[3]
 
-  return min * 60 + sec + parseInt(msStr) / msDivisor
+  if (seconds >= 60) {
+    throw new Error(`Invalid seconds value: ${seconds}. Seconds must be less than 60.`)
+  }
+
+  if (minutes < 0 || seconds < 0) {
+    throw new Error(`Time values cannot be negative: ${minutes}:${seconds}`)
+  }
+
+  return Number.parseFloat(`${minutes * 60 + seconds}.${millisecondsStr}`)
 }
 
 interface RawLrc {

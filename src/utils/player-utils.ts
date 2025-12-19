@@ -4,7 +4,6 @@ import {
   getPictureURL,
 } from 'node-taglib-sharp-extend'
 import type { AudioMetadata } from '~/types/player'
-import type { LrcObj } from './parse-lyric'
 
 /**
  * Extract metadata from an audio file
@@ -39,27 +38,6 @@ export async function parseMetadata(file: File): Promise<AudioMetadata> {
       duration: 0,
     }
   }
-}
-
-/**
- * Find the index of the active lyric based on current time
- */
-export function findActiveLyric(lyrics: LrcObj[], currentTime: number): number {
-  if (!lyrics.length) {
-    return -1
-  }
-
-  // Find the last lyric that has started (time <= currentTime)
-  let activeIndex = -1
-  for (let i = 0; i < lyrics.length; i++) {
-    if (lyrics[i].time <= currentTime) {
-      activeIndex = i
-    } else {
-      break
-    }
-  }
-
-  return activeIndex
 }
 
 /**

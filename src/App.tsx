@@ -1,5 +1,5 @@
 import { createSignal, createMemo, Show, ErrorBoundary } from 'solid-js'
-import { PlayerProvider, usePlayerContext } from '~/context/PlayerProvider'
+import { PlayerProvider, usePlayerContext } from '~/context/player'
 import { BackgroundLayer } from '~/components/BackgroundLayer'
 import { AudioControls } from '~/components/AudioControls'
 import { MetadataDisplay } from '~/components/MetadataDisplay'

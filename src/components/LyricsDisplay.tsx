@@ -1,6 +1,6 @@
 import { For, Show, createMemo, createSignal, createEffect, onCleanup, on } from 'solid-js'
 import { createStore } from 'solid-js/store'
-import { usePlayerContext } from '~/context/PlayerProvider'
+import { usePlayerContext } from '~/context/player'
 import type { LrcObj } from '~/utils/parse-lyric'
 import { formatTime } from '~/utils/player-utils'
 
@@ -23,7 +23,7 @@ function LyricLine(props: LyricLineProps) {
       onClick={props.onClick}
       data-active={props.lyricData.isActive ? '' : undefined}
       data-past={props.lyricData.isPast ? '' : undefined}
-      class="lyric-line group px-4 py-3 text-center transition-all ease-out duration-300 cursor-pointer hover:text-white/80 relative text-gray-500 text-lg opacity-60 data-[active]:(text-white text-2xl font-semibold opacity-100 scale-105) data-[past]:(text-gray-400 opacity-70)"
+      class="lyric-line group px-4 py-3 text-center transition-all ease-out duration-300 cursor-pointer hover:text-white/80 relative text-gray-500 text-lg opacity-60 data-[active]:(text-white text-2xl font-semibold opacity-100 zoom-105) data-[past]:(text-gray-400 opacity-70)"
     >
       <Show when={props.lyricData.rawContent}>
         <div class="lyric-original mb-1">{props.lyricData.rawContent}</div>

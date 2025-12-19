@@ -1,4 +1,4 @@
-import { usePlayerContext } from '~/context/PlayerProvider'
+import { usePlayerContext } from '~/context/player'
 
 export function MetadataDisplay() {
   const [state] = usePlayerContext()

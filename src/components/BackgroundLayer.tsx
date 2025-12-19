@@ -1,5 +1,5 @@
 import { createMemo } from 'solid-js'
-import { usePlayerContext } from '~/context/PlayerProvider'
+import { usePlayerContext } from '~/context/player'
 
 export interface BackgroundLayerProps {
   opacity?: number

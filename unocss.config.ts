@@ -4,6 +4,7 @@ import { presetIcons } from '@unocss/preset-icons'
 import variantGroup from '@unocss/transformer-variant-group'
 
 const config: UserConfig = {
+  rules: [[/^zoom-(\d+)$/, ([, deg]) => ({ zoom: Number.parseInt(deg) / 100 })]],
   presets: [presetWind(), presetIcons({ scale: 1.2 })],
   transformers: [variantGroup()],
   extractors: [

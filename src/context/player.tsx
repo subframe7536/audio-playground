@@ -1,12 +1,5 @@
-import {
-  createContext,
-  useContext,
-  createEffect,
-  createResource,
-  createMemo,
-  onCleanup,
-} from 'solid-js'
-import { createStore } from 'solid-js/store'
+import { createContext, useContext, createEffect, createResource } from 'solid-js'
+import { createStore, unwrap } from 'solid-js/store'
 import { parseTrack, ZAudio } from 'audio0'
 import type {
   PlayerState,
@@ -15,7 +8,7 @@ import type {
   PlayerProviderProps,
   AudioMetadata,
 } from '~/types/player'
-import { parseMetadata, findActiveLyric } from '~/utils/player-utils'
+import { parseMetadata } from '~/utils/player-utils'
 import { parseLyric } from '~/utils/parse-lyric'
 
 const PlayerContext = createContext<PlayerContextValue>()
@@ -56,7 +49,14 @@ export function PlayerProvider(props: PlayerProviderProps) {
   })
 
   audio.on('timeupdate', (time) => {
+    time = Math.round(time * 100) / 100
     setState('currentTime', time)
+    for (let i = 0; i < state.lyrics.length; i++) {
+      if (state.lyrics[i].time > time) {
+        setState('activeLyricIndex', i - 1)
+        break
+      }
+    }
   })
 
   audio.on('load', () => {
@@ -95,6 +95,7 @@ export function PlayerProvider(props: PlayerProviderProps) {
           setState('lyrics', parsedLyrics)
         }
         console.log('Metadata parsed successfully:', parsedMetadata)
+        console.log('Lyric:', unwrap(state.lyrics))
         return parsedMetadata
       } catch (error) {
         console.warn('Failed to parse metadata, using fallback values:', error)
@@ -111,6 +112,8 @@ export function PlayerProvider(props: PlayerProviderProps) {
     },
   )
 
+  let _cleanup: VoidFunction
+
   // Create resource for audio loading
   const [audioData] = createResource(
     () => props.audioFile,
@@ -119,13 +122,13 @@ export function PlayerProvider(props: PlayerProviderProps) {
         return null
       }
 
+      _cleanup?.()
+
       try {
         const [track, cleanup] = await parseTrack({ src: audioFile })
         console.log('Loading audio from URL:', track, audio.codecs)
         const result = await audio.load(track)
-        console.log('Audio load result:', result)
-
-        onCleanup(cleanup)
+        _cleanup = cleanup
 
         // Load the audio file
         setState('isAudioReady', result)
@@ -138,14 +141,6 @@ export function PlayerProvider(props: PlayerProviderProps) {
       }
     },
   )
-
-  // Derived active lyric index
-  const activeLyricIndex = createMemo(() => findActiveLyric(state.lyrics, state.currentTime))
-
-  // Update active lyric index when it changes
-  createEffect(() => {
-    setState('activeLyricIndex', activeLyricIndex())
-  })
 
   // Update state when metadata resource changes
   createEffect(() => {
@@ -172,54 +167,22 @@ export function PlayerProvider(props: PlayerProviderProps) {
   // Player actions with comprehensive error handling
   const actions: PlayerActions = {
     play: async () => {
-      try {
-        console.log('Play action called, state:', audio.state)
-
-        // Check if audio is ready before attempting to play
-        if (!state.isAudioReady) {
-          console.warn('Audio not ready yet, cannot play')
-          return
-        }
-
-        console.log('Attempting to play audio...')
-
-        await audio.play()
-        console.log('Audio play() completed successfully')
-      } catch (error) {
-        console.error('Failed to play audio:', error)
-        // Could emit an error event or update state to show error to user
-        throw new Error(
-          `Playback failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        )
+      // Check if audio is ready before attempting to play
+      if (!state.isAudioReady) {
+        console.warn('Audio not ready yet, cannot play')
+        return
       }
+
+      await audio.play()
     },
     pause: () => {
-      try {
-        audio.pause()
-      } catch (error) {
-        console.error('Failed to pause audio:', error)
-      }
+      audio.pause()
     },
     seek: (time: number) => {
-      try {
-        // Validate seek time
-        if (time < 0 || time > state.duration) {
-          console.warn('Seek time out of bounds:', time)
-          return
-        }
-        audio.seek(time)
-      } catch (error) {
-        console.error('Failed to seek audio:', error)
-      }
+      audio.seek(time)
     },
     setVolume: (volume: number) => {
-      try {
-        // Validate volume range
-        const clampedVolume = Math.max(0, Math.min(1, volume))
-        audio.volume = clampedVolume
-      } catch (error) {
-        console.error('Failed to set volume:', error)
-      }
+      audio.volume = volume
     },
   }
 

@@ -1,42 +1,12 @@
 import { describe, test, expect } from 'bun:test'
 import {
-  findActiveLyric,
   formatTime,
   parseTimeToSeconds,
   calculateStaggerDelay,
   getAnimationTimings,
 } from './player-utils'
-import type { LrcObj } from './parse-lyric'
 
 describe('player-utils', () => {
-  describe('findActiveLyric', () => {
-    const lyrics: LrcObj[] = [
-      { index: 0, time: 10, rawContent: 'First line', transContent: '' },
-      { index: 1, time: 20, rawContent: 'Second line', transContent: '' },
-      { index: 2, time: 30, rawContent: 'Third line', transContent: '' },
-    ]
-
-    test('returns -1 for empty lyrics', () => {
-      expect(findActiveLyric([], 15)).toBe(-1)
-    })
-
-    test('returns -1 when time is before first lyric', () => {
-      expect(findActiveLyric(lyrics, 5)).toBe(-1)
-    })
-
-    test('returns correct index for time matching lyric', () => {
-      expect(findActiveLyric(lyrics, 20)).toBe(1)
-    })
-
-    test('returns correct index for time between lyrics', () => {
-      expect(findActiveLyric(lyrics, 25)).toBe(1)
-    })
-
-    test('returns last index for time after all lyrics', () => {
-      expect(findActiveLyric(lyrics, 50)).toBe(2)
-    })
-  })
-
   describe('formatTime', () => {
     test('formats zero correctly', () => {
       expect(formatTime(0)).toBe('0:00')

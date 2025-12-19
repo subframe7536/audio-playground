@@ -1,4 +1,4 @@
-import { usePlayerContext } from '~/context/PlayerProvider'
+import { usePlayerContext } from '~/context/player'
 import { Icon } from '~/components/icon'
 import { formatTime } from '~/utils/player-utils'
 import { createMemo } from 'solid-js'
