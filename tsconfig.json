@@ -10,6 +10,9 @@
         "./src/*"
       ]
     },
+    "types": [
+      "vite/client"
+    ],
     "allowJs": true,
     "strict": true,
     "strictNullChecks": true,

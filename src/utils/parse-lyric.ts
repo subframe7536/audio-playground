@@ -7,7 +7,7 @@ export interface LrcObj {
 
 // 1. Static Regex to avoid recompilation
 // Matches <mm:ss.xx> or [mm:ss.xx] anywhere (for cleanup)
-const REG_TIME_TAG = /^\[(\d{1,2}):(\d{1,2})\.(\d{1,3})\]$/
+const REG_TIME_TAG = /^\[(\d{1,2}):(\d{1,2})\.(\d{1,3})\]/
 const REG_TIME_EXTRA = /[<[]\d{1,2}:\d{1,2}\.\d{1,3}[>\]]/g
 
 /**
@@ -85,7 +85,6 @@ export function parseLyric(sourceLrc: string): LrcObj[] {
   if (!sourceLrc) {
     return []
   }
-
   const lrcArr = sourceLrc.split(/[\r\n]+/)
   const parsedRaw = parseRaw(lrcArr)
   const normalizedLrc: LrcObj[] = []

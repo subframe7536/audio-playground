@@ -1,10 +1,11 @@
-import { createSignal, createMemo, Show, ErrorBoundary } from 'solid-js'
+import { createSignal, Show, ErrorBoundary } from 'solid-js'
 import { PlayerProvider, usePlayerContext } from '~/context/player'
 import { BackgroundLayer } from '~/components/background-layer'
 import { AudioControls } from '~/components/audio-control'
 import { MetadataDisplay } from '~/components/metadata-display'
 import { LyricsDisplay } from '~/components/lyric-display'
 import { Icon } from '~/components/icon'
+import url from '/test.ogg?url'
 
 // Error fallback component
 function ErrorFallback(props: { error: Error; reset: () => void }) {
@@ -43,9 +44,6 @@ function PlayerInterface(props: {
 }) {
   const [state] = usePlayerContext()
   let fileInputRef: HTMLInputElement
-
-  // Show loading spinner if any resource is loading
-  const isLoading = createMemo(() => state.isLoadingMetadata || state.isLoadingAudio)
 
   const handleFileSelect = (event: Event) => {
     const target = event.target as HTMLInputElement
@@ -86,7 +84,7 @@ function PlayerInterface(props: {
 
   return (
     <>
-      <Show when={!isLoading()} fallback={<LoadingSpinner />}>
+      <Show when={!state.isLoading} fallback={<LoadingSpinner />}>
         <div class="relative h-screen max-w-300 mx-a">
           {/* Background Layer */}
           <BackgroundLayer opacity={0.6} blurIntensity={20} />
@@ -95,17 +93,17 @@ function PlayerInterface(props: {
           <div class="absolute top-4 right-4 z-20 flex gap-2">
             <button
               onClick={props.onDemoMode}
-              class="p-3 bg-blue-500/20 hover:bg-blue-500/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
+              class="p-3 size-12 bg-blue-500/20 hover:bg-blue-500/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
               title="Try demo mode"
             >
-              <Icon name="lucide:play-circle" class="w-5 h-5" />
+              <Icon name="lucide:circle-play" class="size-5" />
             </button>
             <button
               onClick={handleUploadClick}
-              class="p-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
+              class="p-3 size-12 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
               title="Upload audio file"
             >
-              <Icon name="lucide:upload" class="w-5 h-5" />
+              <Icon name="lucide:upload" class="size-5" />
             </button>
             <Show when={props.hasFile}>
               <button
@@ -187,7 +185,7 @@ function PlayerInterface(props: {
 }
 
 export function App() {
-  // Internal file state - remove debouncing as it's causing issues
+  // Audio source state - can be either file or URL
   const [audioFile, setAudioFile] = createSignal<File | undefined>()
 
   const handleFileSelect = (file: File) => {
@@ -201,7 +199,7 @@ export function App() {
 
   const handleDemoMode = async () => {
     try {
-      const demo = await fetch('./test.ogg').then((r) => r.arrayBuffer())
+      const demo = await fetch(url).then((r) => r.arrayBuffer())
       const file = new File([demo], 'test.ogg', { type: 'audio/ogg' })
 
       setAudioFile(file)
@@ -214,7 +212,7 @@ export function App() {
   return (
     <div class="music-player-app">
       <ErrorBoundary fallback={(err, reset) => <ErrorFallback error={err} reset={reset} />}>
-        <PlayerProvider audioFile={audioFile()} autoPlay={false}>
+        <PlayerProvider audioFile={audioFile()} autoPlay={true}>
           <PlayerInterface
             onFileSelect={handleFileSelect}
             onClearFile={handleClearFile}

@@ -99,13 +99,13 @@ export function AudioControls() {
         >
           <Icon
             name={
-              state.isLoadingAudio
+              state.isLoading
                 ? 'lucide:loader-2'
                 : state.isPlaying
                   ? 'lucide:pause'
                   : 'lucide:play'
             }
-            class={`size-8 ${state.isLoadingAudio ? 'animate-spin' : ''}`}
+            class={`size-8 ${state.isLoading ? 'animate-spin' : ''}`}
           />
         </button>
 

@@ -14,9 +14,9 @@ export function BackgroundLayer(props: BackgroundLayerProps) {
 
   // Create memoized background style
   const backgroundStyle = createMemo(() => {
-    if (state.artwork) {
+    if (state.metadata?.artwork) {
       return {
-        'background-image': `url(${state.artwork})`,
+        'background-image': `url(${state.metadata.artwork})`,
         'background-size': 'cover',
         'background-position': 'center',
         'background-repeat': 'no-repeat',
@@ -25,18 +25,15 @@ export function BackgroundLayer(props: BackgroundLayerProps) {
     return {}
   })
 
-  // Create memoized blur filter
-  const blurFilter = createMemo(() => `blur(${blurIntensity()}px)`)
-
   return (
     <div class="fixed inset-0 -z-10 overflow-hidden">
       {/* Artwork background with blur */}
       <div
-        class="absolute inset-0 transition-all duration-1000 ease-in-out transform scale-110"
+        class="absolute inset-0 transition-opacity duration-1000 ease-in-out transform scale-110"
         style={{
           ...backgroundStyle(),
-          filter: blurFilter(),
-          opacity: state.artwork ? 1 : 0,
+          filter: `blur(${blurIntensity()}px)`,
+          opacity: state.metadata?.artwork ? 1 : 0,
         }}
       />
 
@@ -44,8 +41,8 @@ export function BackgroundLayer(props: BackgroundLayerProps) {
       <div
         class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
         style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          opacity: state.artwork ? 0 : 1,
+          background: 'linear-gradient(135deg, #fbdea4ff 0%, #badbbcff 60%, #78b4f4ff 100%)',
+          opacity: state.metadata?.artwork ? 0 : 1,
         }}
       />
 

@@ -9,5 +9,4 @@
     "source.fixAll.oxc": "always",
   },
   "editor.formatOnSave": true,
-  "oxc.fmt.experimental": true,
 }

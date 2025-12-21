@@ -11,22 +11,27 @@ export interface AudioMetadata {
 }
 
 export interface PlayerState {
+  // Playback state
   isPlaying: boolean
   currentTime: number
   duration: number
   volume: number
+  
+  // Lyric state
   activeLyricIndex: number
-  metadata: AudioMetadata | null
-  artwork: string | null
   lyrics: LrcObj[]
+  
+  // Metadata
+  metadata: AudioMetadata | null
+  
   // Audio ready state
   isAudioReady: boolean
-  // Resource loading states
-  isLoadingMetadata: boolean
-  isLoadingAudio: boolean
-  // Resource error states
-  metadataError: Error | null
-  audioError: Error | null
+  
+  // Loading state
+  isLoading: boolean
+  
+  // Error state
+  error: Error | null
 }
 
 export interface PlayerActions {
