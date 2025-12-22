@@ -1,7 +1,7 @@
 import { usePlayerContext } from '~/context/player'
 import { Icon } from '~/components/icon'
 import { formatTime } from '~/utils/player-utils'
-import { createMemo } from 'solid-js'
+import { createMemo, For, Show } from 'solid-js'
 
 export function AudioControls() {
   const [state, actions] = usePlayerContext()
@@ -51,9 +51,9 @@ export function AudioControls() {
       </div>
 
       {/* Progress Bar */}
-      <div class="w-full mb-4">
+      <div class="w-full mb-4 group">
         <div
-          class="relative w-full h-1 bg-white/30 rounded-full cursor-pointer hover:bg-white/40 transition-colors"
+          class={`relative w-full ${state.waveform ? 'h-12' : 'h-1 group-hover:h-2'} cursor-pointer transition-all duration-300`}
           onClick={handleSeek}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -67,11 +67,37 @@ export function AudioControls() {
           aria-valuemax={state.duration}
           aria-valuenow={state.currentTime}
         >
-          {/* Progress fill */}
-          <div
-            class="absolute top-0 left-0 h-full bg-white rounded-full transition-all duration-100"
-            style={{ width: `${progressPercentage()}%` }}
-          />
+          {/* Waveform Visualization */}
+          <Show
+            when={state.waveform}
+            fallback={
+              <div
+                class="absolute top-0 left-0 h-full bg-white rounded-full transition-all duration-100"
+                style={{ width: `${progressPercentage()}%` }}
+              />
+            }
+          >
+            <div
+              class="absolute inset-0 flex items-center justify-between gap-4px px-1 pointer-events-none"
+              style={{
+                '-webkit-mask-image': `linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) ${progressPercentage()}%, rgba(0,0,0,0.4) ${progressPercentage()}%, rgba(0,0,0,0.4) 100%)`,
+                'mask-image': `linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) ${progressPercentage()}%, rgba(0,0,0,0.4) ${progressPercentage()}%, rgba(0,0,0,0.4) 100%)`,
+              }}
+            >
+              <For each={state.waveform}>
+                {(amp, i) => (
+                  <div
+                    class="flex-1 bg-white rounded-full origin-bottom animate-in active"
+                    style={{
+                      height: `${Math.max(amp * 100, 10)}%`,
+                      animation: `enter 0.4s ease-out backwards`,
+                      'animation-delay': `${i() * 3}ms`,
+                    }}
+                  />
+                )}
+              </For>
+            </div>
+          </Show>
         </div>
       </div>
 
@@ -99,11 +125,7 @@ export function AudioControls() {
         >
           <Icon
             name={
-              state.isLoading
-                ? 'lucide:loader-2'
-                : state.isPlaying
-                  ? 'lucide:pause'
-                  : 'lucide:play'
+              state.isLoading ? 'lucide:loader-2' : state.isPlaying ? 'lucide:pause' : 'lucide:play'
             }
             class={`size-8 ${state.isLoading ? 'animate-spin' : ''}`}
           />

@@ -212,7 +212,7 @@ export function App() {
   return (
     <div class="music-player-app">
       <ErrorBoundary fallback={(err, reset) => <ErrorFallback error={err} reset={reset} />}>
-        <PlayerProvider audioFile={audioFile()} autoPlay={true}>
+        <PlayerProvider audioFile={audioFile()}>
           <PlayerInterface
             onFileSelect={handleFileSelect}
             onClearFile={handleClearFile}

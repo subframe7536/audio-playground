@@ -1,6 +1,6 @@
 import { createContext, useContext, createEffect, createResource } from 'solid-js'
 import { createStore, produce } from 'solid-js/store'
-import { parseTrack, ZAudio } from 'audio0'
+import { normalizeAudioBuffer, parseTrack, ZAudio } from 'audio0'
 import type {
   PlayerState,
   PlayerActions,
@@ -19,20 +19,23 @@ const initialState: PlayerState = {
   currentTime: 0,
   duration: 0,
   volume: 0.8,
-  
+
   // Lyric state
   activeLyricIndex: -1,
   lyrics: [],
-  
+
   // Metadata
   metadata: null,
-  
+
   // Audio ready state
   isAudioReady: false,
-  
+
+  // Waveform data
+  waveform: null,
+
   // Loading state
   isLoading: false,
-  
+
   // Error state
   error: null,
 }
@@ -51,11 +54,11 @@ export function PlayerProvider(props: PlayerProviderProps) {
   audio.on('pause', () => setState('isPlaying', false))
   audio.on('ended', () => setState('isPlaying', false))
   audio.on('volume', (volume) => setState('volume', volume))
-  
+
   audio.on('timeupdate', (time) => {
     const roundedTime = Math.round(time * 100) / 100
     setState('currentTime', roundedTime)
-    
+
     // Update active lyric index
     for (let i = 0; i < state.lyrics.length; i++) {
       if (state.lyrics[i].time > roundedTime + 0.5) {
@@ -84,25 +87,35 @@ export function PlayerProvider(props: PlayerProviderProps) {
       if (!file) {
         setState(initialState)
         await audio.stop()
-        return {metadata: null, audioReady: false}
+        return { metadata: null, audioReady: false }
       }
 
       cleanup?.()
 
       try {
         let parsedMetadata = await parseMetadata(file)
-        
-        setState(produce(s => {
-          if (parsedMetadata.lyric) {
-            s.lyrics = parseLyric(parsedMetadata.lyric)
-          }
-          s.metadata = parsedMetadata
-          s.duration = parsedMetadata.duration
-        }))
+
+        setState(
+          produce((s) => {
+            if (parsedMetadata.lyric) {
+              s.lyrics = parseLyric(parsedMetadata.lyric)
+            }
+            s.metadata = parsedMetadata
+            s.duration = parsedMetadata.duration
+          }),
+        )
 
         // Load audio - handle File and URL differently
+        const buffer = await file.arrayBuffer()
+
+        new OfflineAudioContext(1, 1, 44100)
+          .decodeAudioData(buffer)
+          .then((audioBuffer) => normalizeAudioBuffer(audioBuffer, 48))
+          .then((waveform) => setState('waveform', waveform))
+
         const [track, cleanupFn] = await parseTrack({ src: file })
-        const audioReady = await audio.load(track, {autoPlay: props.autoPlay})
+
+        const audioReady = await audio.load(track, { autoPlay: props.autoPlay })
         cleanup = cleanupFn
 
         setState('isAudioReady', audioReady)
@@ -113,7 +126,7 @@ export function PlayerProvider(props: PlayerProviderProps) {
         }
       } catch (error) {
         console.warn('Failed to load audio/metadata:', error)
-        
+
         // Return fallback metadata even if audio loading fails
         const fallbackMetadata: AudioMetadata = {
           title: file ? file.name.replace(/\.[^/.]+$/, '') : 'Demo Audio',
@@ -127,7 +140,7 @@ export function PlayerProvider(props: PlayerProviderProps) {
           audioReady: false,
         }
       }
-    }
+    },
   )
 
   // Sync loading and error states
@@ -149,7 +162,9 @@ export function PlayerProvider(props: PlayerProviderProps) {
     },
     pause: () => audio.pause(),
     seek: (time: number) => audio.seek(time),
-    setVolume: (volume: number) => { audio.volume = volume },
+    setVolume: (volume: number) => {
+      audio.volume = volume
+    },
   }
 
   return <PlayerContext.Provider value={[state, actions]}>{props.children}</PlayerContext.Provider>

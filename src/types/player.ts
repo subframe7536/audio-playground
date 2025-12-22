@@ -16,20 +16,23 @@ export interface PlayerState {
   currentTime: number
   duration: number
   volume: number
-  
+
   // Lyric state
   activeLyricIndex: number
   lyrics: LrcObj[]
-  
+
   // Metadata
   metadata: AudioMetadata | null
-  
+
+  // Waveform data
+  waveform: number[] | null
+
   // Audio ready state
   isAudioReady: boolean
-  
+
   // Loading state
   isLoading: boolean
-  
+
   // Error state
   error: Error | null
 }
