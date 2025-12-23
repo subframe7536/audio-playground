@@ -1,4 +1,4 @@
-import type { JSX } from 'solid-js'
+import type { Accessor, JSX } from 'solid-js'
 import type { LrcObj } from '~/utils/parse-lyric'
 
 export interface AudioMetadata {
@@ -42,12 +42,12 @@ export interface PlayerActions {
   pause: () => void
   seek: (time: number) => void
   setVolume: (volume: number) => void
+  setAudioFile: (file: File | undefined) => void
+  hasFile: Accessor<boolean>
 }
 
 export type PlayerContextValue = readonly [PlayerState, PlayerActions]
 
 export interface PlayerProviderProps {
   children: JSX.Element
-  audioFile?: File
-  autoPlay?: boolean
 }

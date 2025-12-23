@@ -1,4 +1,11 @@
-import { createContext, useContext, createEffect, createResource } from 'solid-js'
+import {
+  createContext,
+  useContext,
+  createEffect,
+  createResource,
+  createSignal,
+  createMemo,
+} from 'solid-js'
 import { createStore, produce } from 'solid-js/store'
 import { normalizeAudioBuffer, parseTrack, ZAudio } from 'audio0'
 import type {
@@ -48,6 +55,7 @@ export function PlayerProvider(props: PlayerProviderProps) {
   })
 
   // Reactive state
+  const [audioFile, setAudioFile] = createSignal<File | undefined>()
   const [state, setState] = createStore<PlayerState>(initialState)
   // Audio event handlers
   audio.on('play', () => setState('isPlaying', true))
@@ -82,9 +90,10 @@ export function PlayerProvider(props: PlayerProviderProps) {
 
   // Combined audio and metadata resource
   const [audioResource] = createResource(
-    () => props.audioFile,
+    () => audioFile(),
     async (file) => {
       if (!file) {
+        console.log('Clear')
         setState(initialState)
         await audio.stop()
         return { metadata: null, audioReady: false }
@@ -115,7 +124,7 @@ export function PlayerProvider(props: PlayerProviderProps) {
 
         const [track, cleanupFn] = await parseTrack({ src: file })
 
-        const audioReady = await audio.load(track, { autoPlay: props.autoPlay })
+        const audioReady = await audio.load(track)
         cleanup = cleanupFn
 
         setState('isAudioReady', audioReady)
@@ -165,6 +174,8 @@ export function PlayerProvider(props: PlayerProviderProps) {
     setVolume: (volume: number) => {
       audio.volume = volume
     },
+    hasFile: createMemo(() => !!audioFile()),
+    setAudioFile,
   }
 
   return <PlayerContext.Provider value={[state, actions]}>{props.children}</PlayerContext.Provider>

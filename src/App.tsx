@@ -1,4 +1,4 @@
-import { createSignal, Show, ErrorBoundary } from 'solid-js'
+import { Show, ErrorBoundary } from 'solid-js'
 import { PlayerProvider, usePlayerContext } from '~/context/player'
 import { BackgroundLayer } from '~/components/background-layer'
 import { AudioControls } from '~/components/audio-control'
@@ -36,14 +36,25 @@ function LoadingSpinner() {
 }
 
 // Main player interface component
-function PlayerInterface(props: {
-  onFileSelect: (file: File) => void
-  onClearFile: () => void
-  onDemoMode: () => void
-  hasFile: boolean
-}) {
-  const [state] = usePlayerContext()
+function PlayerInterface() {
+  const [state, { setAudioFile, hasFile }] = usePlayerContext()
   let fileInputRef: HTMLInputElement
+
+  const handleClearFile = () => {
+    setAudioFile(undefined)
+  }
+
+  const handleDemoMode = async () => {
+    try {
+      const demo = await fetch(url).then((r) => r.arrayBuffer())
+      const file = new File([demo], 'test.ogg', { type: 'audio/ogg' })
+
+      setAudioFile(file)
+    } catch (error) {
+      console.error('Failed to create demo audio:', error)
+      alert('Failed to create demo audio. Please try uploading your own file.')
+    }
+  }
 
   const handleFileSelect = (event: Event) => {
     const target = event.target as HTMLInputElement
@@ -53,7 +64,7 @@ function PlayerInterface(props: {
 
     if (file && file.type.startsWith('audio/')) {
       console.log('Valid audio file, calling onFileSelect')
-      props.onFileSelect(file)
+      setAudioFile(file)
     } else if (file) {
       console.log('Invalid file type:', file.type)
       alert('Please select a valid audio file (MP3, M4A, WAV, etc.)')
@@ -66,13 +77,13 @@ function PlayerInterface(props: {
   }
 
   const handleCoverClick = () => {
-    if (!props.hasFile) {
+    if (!hasFile()) {
       fileInputRef?.click()
     }
   }
 
   const handleCoverKeyDown = (event: KeyboardEvent) => {
-    if (!props.hasFile && (event.key === 'Enter' || event.key === ' ')) {
+    if (!hasFile() && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault()
       fileInputRef?.click()
     }
@@ -92,26 +103,29 @@ function PlayerInterface(props: {
           {/* Top Right Controls */}
           <div class="absolute top-4 right-4 z-20 flex gap-2">
             <button
-              onClick={props.onDemoMode}
-              class="p-3 size-12 bg-blue-500/20 hover:bg-blue-500/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
+              onClick={handleDemoMode}
+              class="size-12 bg-blue-500/20 hover:bg-blue-500/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
               title="Try demo mode"
             >
-              <Icon name="lucide:circle-play" class="size-5" />
+              <Icon
+                name="lucide:circle-play"
+                class="size-5 absolute top-50% left-50% -translate-50%"
+              />
             </button>
             <button
               onClick={handleUploadClick}
-              class="p-3 size-12 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
+              class="size-12 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
               title="Upload audio file"
             >
-              <Icon name="lucide:upload" class="size-5" />
+              <Icon name="lucide:upload" class="size-5 absolute top-50% left-50% -translate-50%" />
             </button>
-            <Show when={props.hasFile}>
+            <Show when={hasFile()}>
               <button
-                onClick={props.onClearFile}
-                class="p-3 bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
+                onClick={handleClearFile}
+                class="size-12 bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
                 title="Clear current file"
               >
-                <Icon name="lucide:x" class="w-5 h-5" />
+                <Icon name="lucide:x" class="size-5 absolute top-50% left-50% -translate-50%" />
               </button>
             </Show>
           </div>
@@ -132,12 +146,12 @@ function PlayerInterface(props: {
               {/* Album Cover */}
               <div class="mb-6">
                 <div
-                  class={`aspect-square w-full bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm ${!props.hasFile ? 'cursor-pointer hover:bg-white/20 transition-all duration-200' : ''}`}
+                  class={`aspect-square w-full bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm ${!hasFile() ? 'cursor-pointer hover:bg-white/20 transition-all duration-200' : ''}`}
                   onClick={handleCoverClick}
                   onKeyDown={handleCoverKeyDown}
-                  tabIndex={!props.hasFile ? 0 : -1}
-                  role={!props.hasFile ? 'button' : undefined}
-                  aria-label={!props.hasFile ? 'Click to upload audio file' : undefined}
+                  tabIndex={!hasFile() ? 0 : -1}
+                  role={!hasFile() ? 'button' : undefined}
+                  aria-label={!hasFile() ? 'Click to upload audio file' : undefined}
                 >
                   <Show
                     when={state.metadata?.artwork}
@@ -145,7 +159,7 @@ function PlayerInterface(props: {
                       <div class="text-center text-white/60">
                         <Icon name="lucide:music" class="w-16 h-16 mx-auto mb-2" />
                         <Show
-                          when={props.hasFile}
+                          when={hasFile()}
                           fallback={
                             <div>
                               <span class="text-lg block mb-2">Click to upload</span>
@@ -185,42 +199,11 @@ function PlayerInterface(props: {
 }
 
 export function App() {
-  // Audio source state - can be either file or URL
-  const [audioFile, setAudioFile] = createSignal<File | undefined>()
-
-  const handleFileSelect = (file: File) => {
-    console.log('handleFileSelect called with:', file)
-    setAudioFile(file)
-  }
-
-  const handleClearFile = () => {
-    setAudioFile(undefined)
-  }
-
-  const handleDemoMode = async () => {
-    try {
-      const demo = await fetch(url).then((r) => r.arrayBuffer())
-      const file = new File([demo], 'test.ogg', { type: 'audio/ogg' })
-
-      setAudioFile(file)
-    } catch (error) {
-      console.error('Failed to create demo audio:', error)
-      alert('Failed to create demo audio. Please try uploading your own file.')
-    }
-  }
-
   return (
-    <div class="music-player-app">
-      <ErrorBoundary fallback={(err, reset) => <ErrorFallback error={err} reset={reset} />}>
-        <PlayerProvider audioFile={audioFile()}>
-          <PlayerInterface
-            onFileSelect={handleFileSelect}
-            onClearFile={handleClearFile}
-            onDemoMode={handleDemoMode}
-            hasFile={!!audioFile()}
-          />
-        </PlayerProvider>
-      </ErrorBoundary>
-    </div>
+    <ErrorBoundary fallback={(err, reset) => <ErrorFallback error={err} reset={reset} />}>
+      <PlayerProvider>
+        <PlayerInterface />
+      </PlayerProvider>
+    </ErrorBoundary>
   )
 }
