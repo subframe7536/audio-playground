@@ -7,7 +7,7 @@ import {
   createMemo,
 } from 'solid-js'
 import { createStore, produce } from 'solid-js/store'
-import { normalizeAudioBuffer, parseTrack, ZAudio } from 'audio0'
+import { createWaveformGenerator, parseTrack, ZAudio } from 'audio0'
 import type {
   PlayerState,
   PlayerActions,
@@ -68,11 +68,16 @@ export function PlayerProvider(props: PlayerProviderProps) {
     setState('currentTime', roundedTime)
 
     // Update active lyric index
-    for (let i = 0; i < state.lyrics.length; i++) {
-      if (state.lyrics[i].time > roundedTime + 0.5) {
-        setState('activeLyricIndex', i - 1)
-        break
+    if (state.lyrics.length > 0) {
+      let activeIndex = -1
+      for (let i = 0; i < state.lyrics.length; i++) {
+        if (state.lyrics[i].time <= roundedTime + 0.5) {
+          activeIndex = i
+        } else {
+          break
+        }
       }
+      setState('activeLyricIndex', activeIndex)
     }
   })
 
@@ -94,8 +99,13 @@ export function PlayerProvider(props: PlayerProviderProps) {
     async (file) => {
       if (!file) {
         console.log('Clear')
-        setState(initialState)
+        // Stop audio first to prevent events from firing during state reset
         await audio.stop()
+        // Clean up previous track resources
+        cleanup?.()
+        cleanup = undefined
+        // Reset state to initial values
+        setState(initialState)
         return { metadata: null, audioReady: false }
       }
 
@@ -116,11 +126,9 @@ export function PlayerProvider(props: PlayerProviderProps) {
 
         // Load audio - handle File and URL differently
         const buffer = await file.arrayBuffer()
-
-        new OfflineAudioContext(1, 1, 44100)
-          .decodeAudioData(buffer)
-          .then((audioBuffer) => normalizeAudioBuffer(audioBuffer, 48))
-          .then((waveform) => setState('waveform', waveform))
+        createWaveformGenerator(buffer)
+          .then(calc => calc(48))
+          .then((waveform) => (console.log(waveform), setState('waveform', waveform)))
 
         const [track, cleanupFn] = await parseTrack({ src: file })
 
