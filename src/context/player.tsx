@@ -127,7 +127,7 @@ export function PlayerProvider(props: PlayerProviderProps) {
         // Load audio - handle File and URL differently
         const buffer = await file.arrayBuffer()
         createWaveformGenerator(buffer)
-          .then(calc => calc(48))
+          .then((calc) => calc(48))
           .then((waveform) => (console.log(waveform), setState('waveform', waveform)))
 
         const [track, cleanupFn] = await parseTrack({ src: file })
