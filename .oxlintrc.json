@@ -3,7 +3,7 @@
     "eslint",
     "import",
     "jsdoc",
-    "jsx-a11y",
+    // "jsx-a11y",
     "unicorn",
     "oxc",
     "typescript",

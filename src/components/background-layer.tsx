@@ -9,9 +9,6 @@ export interface BackgroundLayerProps {
 export function BackgroundLayer(props: BackgroundLayerProps) {
   const [state] = usePlayerContext()
 
-  const opacity = () => props.opacity ?? 0.9
-  const blurIntensity = () => props.blurIntensity ?? 32
-
   // Create memoized background style
   const backgroundStyle = createMemo(() => {
     if (state.metadata?.artwork) {
@@ -32,8 +29,8 @@ export function BackgroundLayer(props: BackgroundLayerProps) {
         class="absolute inset-0 transition-opacity duration-1000 ease-in-out transform scale-110"
         style={{
           ...backgroundStyle(),
-          filter: `blur(${blurIntensity()}px)`,
-          opacity: state.metadata?.artwork ? 1 : 0,
+          filter: `blur(${props.blurIntensity ?? 32}px)`,
+          opacity: state.metadata?.artwork ? 0.7 : 0,
         }}
       />
 
@@ -50,17 +47,16 @@ export function BackgroundLayer(props: BackgroundLayerProps) {
       <div
         class="absolute inset-0 bg-black transition-opacity duration-500 ease-in-out"
         style={{
-          opacity: opacity(),
+          opacity: props.opacity ?? 0.9,
         }}
       />
 
       {/* Additional gradient overlay for better text contrast */}
       <div
-        class="absolute inset-0 transition-opacity duration-500 ease-in-out"
+        class="absolute inset-0 transition-opacity duration-500 ease-in-out opacity-80"
         style={{
           background:
             'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.4) 100%)',
-          opacity: 0.8,
         }}
       />
     </div>

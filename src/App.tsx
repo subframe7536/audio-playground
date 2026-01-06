@@ -98,7 +98,7 @@ function PlayerInterface() {
       <Show when={!state.isLoading} fallback={<LoadingSpinner />}>
         <div class="relative h-screen max-w-300 mx-a">
           {/* Background Layer */}
-          <BackgroundLayer opacity={0.6} blurIntensity={20} />
+          <BackgroundLayer opacity={0.7} blurIntensity={32} />
 
           {/* Top Right Controls */}
           <div class="absolute top-4 right-4 z-20 flex gap-2">

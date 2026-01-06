@@ -56,7 +56,7 @@ export function PlayerProvider(props: PlayerProviderProps) {
 
   // Reactive state
   const [audioFile, setAudioFile] = createSignal<File | undefined>()
-  const [state, setState] = createStore<PlayerState>(initialState)
+  const [state, setState] = createStore<PlayerState>({ ...initialState })
   // Audio event handlers
   audio.on('play', () => setState('isPlaying', true))
   audio.on('pause', () => setState('isPlaying', false))
@@ -95,10 +95,9 @@ export function PlayerProvider(props: PlayerProviderProps) {
 
   // Combined audio and metadata resource
   const [audioResource] = createResource(
-    () => audioFile(),
-    async (file) => {
+    () => ({ file: audioFile() }),
+    async ({ file }) => {
       if (!file) {
-        console.log('Clear')
         // Stop audio first to prevent events from firing during state reset
         await audio.stop()
         // Clean up previous track resources
@@ -128,7 +127,7 @@ export function PlayerProvider(props: PlayerProviderProps) {
         const buffer = await file.arrayBuffer()
         createWaveformGenerator(buffer)
           .then((calc) => calc(48))
-          .then((waveform) => (console.log(waveform), setState('waveform', waveform)))
+          .then((waveform) => setState('waveform', waveform))
 
         const [track, cleanupFn] = await parseTrack({ src: file })
 
