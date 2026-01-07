@@ -1,42 +1,53 @@
 import { For, Show, createMemo, createSignal, createEffect, onCleanup, on } from 'solid-js'
-import { createStore } from 'solid-js/store'
 import { usePlayerContext } from '~/context/player'
 import type { LrcObj } from '~/utils/parse-lyric'
 import { formatTime } from '~/utils/player-utils'
 
-interface LyricLineData extends LrcObj {
-  isActive: boolean
-  isPast: boolean
-}
-
 interface LyricLineProps {
-  lyricData: LyricLineData
+  lyric: LrcObj
+  index: number
+  activeIndex: number
+  isScrolling: boolean
   ref?: (el: HTMLDivElement) => void
   onClick?: () => void
 }
 
 function LyricLine(props: LyricLineProps) {
+  const distance = createMemo(() => props.activeIndex - props.index)
+
+  const blurAmount = createMemo(() => {
+    const dis = Math.abs(distance())
+    if (props.isScrolling || dis < 4) {
+      return 0
+    }
+    const maxBlur = 4
+    return Math.min(dis * 0.2, maxBlur)
+  })
+
   return (
     <div
       ref={props.ref}
       onClick={props.onClick}
-      data-active={props.lyricData.isActive ? '' : undefined}
-      data-past={props.lyricData.isPast ? '' : undefined}
-      class="lyric-line group relative px-4 py-3 text-center transition-all ease-out duration-300 cursor-pointer hover:opacity-100 text-(gray-500 2xl) opacity-60 data-[active]:(text-gray-200 opacity-100) data-[past]:(text-gray-400 opacity-70) leading-8"
+      data-active={distance() ? undefined : ''}
+      data-past={distance() > 0 ? '' : undefined}
+      class="lyric-line group relative py-1 text-center transition-all ease-out duration-300 cursor-pointer hover:opacity-90 text-(gray-500 2xl) opacity-60 data-[active]:(text-gray-200 opacity-100) data-[past]:(text-gray-400 opacity-70) hover:![filter:none]"
+      style={{ filter: `blur(${blurAmount()}px)` }}
     >
-      <Show when={props.lyricData.rawContent}>
-        <div class="lyric-original mb-1 font-700">{props.lyricData.rawContent}</div>
-        <Show when={props.lyricData.transContent}>
-          <div class="lyric-translation font-500 opacity-50 text-lg">
-            {props.lyricData.transContent}
-          </div>
+      <div class="w-fit max-w-80% mx-auto rounded-xl p-(x-4 y-2) group-hover:bg-gray/10">
+        <Show when={props.lyric.rawContent}>
+          <div class="lyric-original mb-1 font-700">{props.lyric.rawContent}</div>
+          <Show when={props.lyric.transContent}>
+            <div class="lyric-translation font-500 opacity-50 text-lg">
+              {props.lyric.transContent}
+            </div>
+          </Show>
         </Show>
-      </Show>
+      </div>
 
       {/* Pure CSS hover time display - only show for lyrics with valid time */}
-      <Show when={props.lyricData.time >= 0}>
-        <div class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 text-white/90 text-xs px-2 py-1 rounded backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none leading-none">
-          {formatTime(props.lyricData.time)}
+      <Show when={props.lyric.time >= 0}>
+        <div class="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none leading-none">
+          {formatTime(props.lyric.time)}
         </div>
       </Show>
     </div>
@@ -51,65 +62,41 @@ export function LyricsDisplay() {
 
   // State
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = createSignal(true)
-  const [resumeTimeout, setResumeTimeout] = createSignal<ReturnType<typeof setTimeout> | null>(null)
+  const [resumeTimeout, setResumeTimeout] = createSignal<ReturnType<typeof setTimeout>>()
 
-  // NOTE: isProgrammaticScroll is removed completely.
-
-  const [lyricsStore, setLyricsStore] = createStore<LyricLineData[]>([])
-
-  // Initialize and update lyrics store when lyrics change
-  createEffect(() => {
-    const lyrics = state.lyrics
-    if (lyrics.length > 0) {
-      setLyricsStore(
-        lyrics.map((lyric) =>
-          Object.assign({}, lyric, {
-            isActive: false,
-            isPast: false,
-          }),
-        ),
-      )
-    }
-  })
-
-  // Update active states
+  // Update active states - trigger auto-scroll when active lyric changes
   createEffect(
     on(
       () => state.activeLyricIndex,
-      (activeIndex, prevIndex = 0) => {
-        if (activeIndex !== prevIndex) {
-          if (prevIndex >= 0 && prevIndex < lyricsStore.length) {
-            setLyricsStore(prevIndex, 'isActive', false)
-          }
-
-          lyricsStore.forEach((_, index) => {
-            setLyricsStore(index, 'isPast', index < activeIndex)
-            setLyricsStore(index, 'isActive', index === activeIndex)
-          })
-
-          // Only scroll if allowed
-          if (activeIndex >= 0 && isAutoScrollEnabled()) {
-            scrollToActiveLyric(activeIndex)
-          }
+      (activeIndex) => {
+        // Only scroll if allowed
+        if (activeIndex >= 0 && isAutoScrollEnabled()) {
+          scrollToActiveLyric(activeIndex)
         }
-        return activeIndex
       },
     ),
   )
 
-  const handleLyricClick = (lyric: LyricLineData) => {
+  const handleLyricClick = (lyric: LrcObj) => {
     if (lyric.time >= 0) {
       actions.seek(lyric.time)
+      scheduleResume(true)
     }
   }
 
-  const hasValidLyrics = createMemo(() => lyricsStore.some((lyric) => lyric.time >= 0))
+  const hasValidLyrics = createMemo(() => state.lyrics.some((lyric) => lyric.time >= 0))
 
   // 1. HELPER: Schedules the auto-scroll to resume after 3 seconds
-  const scheduleResume = () => {
+  const scheduleResume = (immediate?: boolean) => {
     const current = resumeTimeout()
     if (current) {
       clearTimeout(current)
+    }
+
+    if (immediate) {
+      setIsAutoScrollEnabled(true)
+      scrollToActiveLyric(state.activeLyricIndex)
+      return
     }
 
     const id = setTimeout(() => {
@@ -189,7 +176,7 @@ export function LyricsDisplay() {
             <Show when={state.lyrics.length > 0} fallback={<div>No lyrics available</div>}>
               <div class="text-center px-4">
                 <div class="mb-4 text-gray-300">Lyrics (No timing information)</div>
-                <For each={lyricsStore}>
+                <For each={state.lyrics}>
                   {(lyric) => (
                     <div class="mb-2 text-gray-400">
                       <Show when={lyric.rawContent}>
@@ -207,16 +194,22 @@ export function LyricsDisplay() {
         }
       >
         <div class="lyrics-container py-16 px-4">
-          <For each={lyricsStore}>
-            {(lyricData, index) => (
-              <LyricLine
-                lyricData={lyricData}
-                onClick={() => handleLyricClick(lyricData)}
-                ref={(el) => {
-                  lineRefs[index()] = el
-                }}
-              />
-            )}
+          <For each={state.lyrics}>
+            {(lyric, index) => {
+              const currentIndex = index()
+              return (
+                <LyricLine
+                  lyric={lyric}
+                  index={currentIndex}
+                  activeIndex={state.activeLyricIndex}
+                  isScrolling={!isAutoScrollEnabled()}
+                  onClick={() => handleLyricClick(lyric)}
+                  ref={(el) => {
+                    lineRefs[currentIndex] = el
+                  }}
+                />
+              )
+            }}
           </For>
         </div>
       </Show>

@@ -1,7 +1,7 @@
 import { usePlayerContext } from '~/context/player'
 import { Icon } from '~/components/icon'
 import { formatTime } from '~/utils/player-utils'
-import { createMemo, For, Show } from 'solid-js'
+import { For, Show } from 'solid-js'
 
 export function AudioControls() {
   const [state, actions] = usePlayerContext()
@@ -38,10 +38,6 @@ export function AudioControls() {
     actions.seek(seekTime)
   }
 
-  const progressPercentage = createMemo(() =>
-    state.duration > 0 ? (state.currentTime / state.duration) * 100 : 0,
-  )
-
   return (
     <div class="flex flex-col gap-4">
       {/* Time Display */}
@@ -54,6 +50,9 @@ export function AudioControls() {
       <div class="w-full mb-4 group">
         <div
           class={`relative w-full ${state.waveform ? 'h-12' : 'h-1 group-hover:h-2'} cursor-pointer transition-all duration-300`}
+          style={{
+            '--percent': `${state.duration > 0 ? (state.currentTime / state.duration) * 100 : 0}%`,
+          }}
           onClick={handleSeek}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -63,25 +62,22 @@ export function AudioControls() {
           role="slider"
           tabIndex={0}
           aria-label="Seek progress"
-          aria-valuemin={0}
-          aria-valuemax={state.duration}
-          aria-valuenow={state.currentTime}
         >
           {/* Waveform Visualization */}
           <Show
             when={state.waveform}
             fallback={
               <div
-                class="absolute top-0 left-0 h-full bg-white rounded-full transition-all duration-100"
-                style={{ width: `${progressPercentage()}%` }}
+                class="absolute top-0 left-0 h-full bg-white rounded-full transition-width duration-100"
+                style={{ width: 'var(--percent)' }}
               />
             }
           >
             <div
               class="absolute inset-0 flex items-center justify-between gap-4px px-1 pointer-events-none"
               style={{
-                '-webkit-mask-image': `linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) ${progressPercentage()}%, rgba(0,0,0,0.4) ${progressPercentage()}%, rgba(0,0,0,0.4) 100%)`,
-                'mask-image': `linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) ${progressPercentage()}%, rgba(0,0,0,0.4) ${progressPercentage()}%, rgba(0,0,0,0.4) 100%)`,
+                '-webkit-mask-image': `linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) var(--percent), rgba(0,0,0,0.4) var(--percent), rgba(0,0,0,0.4) 100%)`,
+                'mask-image': `linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) var(--percent), rgba(0,0,0,0.4) var(--percent), rgba(0,0,0,0.4) 100%)`,
               }}
             >
               <For each={state.waveform}>

@@ -5,7 +5,7 @@ import uno from '@unocss/vite'
 import { polyfillTaglib, taglibAdvancedChunksConfig } from 'node-taglib-sharp-extend/vite'
 
 export default defineConfig({
-  plugins: [polyfillTaglib({ optimizeChunk: false }), uno({ inspector: false }), solid()],
+  plugins: [polyfillTaglib(), uno({ inspector: false }), solid()],
   resolve: {
     alias: {
       '~': path.resolve(__dirname, 'src'),
