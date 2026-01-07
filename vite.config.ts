@@ -5,6 +5,7 @@ import uno from '@unocss/vite'
 import { polyfillTaglib, taglibAdvancedChunksConfig } from 'node-taglib-sharp-extend/vite'
 
 export default defineConfig({
+  base: '/audio-playground/',
   plugins: [polyfillTaglib(), uno({ inspector: false }), solid()],
   resolve: {
     alias: {
