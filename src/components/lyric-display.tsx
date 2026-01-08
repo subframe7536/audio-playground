@@ -33,7 +33,7 @@ function LyricLine(props: LyricLineProps) {
       class="lyric-line group relative py-1 text-center transition-all ease-out duration-300 cursor-pointer hover:opacity-90 text-(gray-500 2xl) opacity-60 data-[active]:(text-gray-200 opacity-100) data-[past]:(text-gray-400 opacity-70) hover:![filter:none]"
       style={{ filter: `blur(${blurAmount()}px)` }}
     >
-      <div class="w-fit max-w-80% mx-auto rounded-xl p-(x-4 y-2) group-hover:bg-gray/10">
+      <div class="w-fit max-w-80% mx-auto rounded-xl p-(x-4 y-3) group-hover:bg-gray/10">
         <Show when={props.lyric.rawContent}>
           <div class="lyric-original mb-1 font-700">{props.lyric.rawContent}</div>
           <Show when={props.lyric.transContent}>

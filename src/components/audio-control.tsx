@@ -74,7 +74,7 @@ export function AudioControls() {
             }
           >
             <div
-              class="absolute inset-0 flex items-center justify-between gap-4px px-1 pointer-events-none"
+              class="absolute inset-0 flex items-center justify-between gap-1 px-1 pointer-events-none"
               style={{
                 '-webkit-mask-image': `linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) var(--percent), rgba(0,0,0,0.4) var(--percent), rgba(0,0,0,0.4) 100%)`,
                 'mask-image': `linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) var(--percent), rgba(0,0,0,0.4) var(--percent), rgba(0,0,0,0.4) 100%)`,
