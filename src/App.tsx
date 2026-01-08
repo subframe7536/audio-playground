@@ -5,6 +5,7 @@ import { AudioControls } from '~/components/audio-control'
 import { MetadataDisplay } from '~/components/metadata-display'
 import { LyricsDisplay } from '~/components/lyric-display'
 import { Icon } from '~/components/icon'
+import { IconButton } from '~/components/icon-button'
 import url from '/test.ogg?url'
 
 // Error fallback component
@@ -102,31 +103,25 @@ function PlayerInterface() {
 
           {/* Top Right Controls */}
           <div class="absolute top-4 right-4 z-20 flex gap-2">
-            <button
+            <IconButton
+              icon="lucide:circle-play"
               onClick={handleDemoMode}
-              class="size-12 bg-blue-500/20 hover:bg-blue-500/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
+              variant="primary"
               title="Try demo mode"
-            >
-              <Icon
-                name="lucide:circle-play"
-                class="size-5 absolute top-50% left-50% -translate-50%"
-              />
-            </button>
-            <button
+            />
+            <IconButton
+              icon="lucide:upload"
               onClick={handleUploadClick}
-              class="size-12 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
+              variant="default"
               title="Upload audio file"
-            >
-              <Icon name="lucide:upload" class="size-5 absolute top-50% left-50% -translate-50%" />
-            </button>
+            />
             <Show when={hasFile()}>
-              <button
+              <IconButton
+                icon="lucide:x"
                 onClick={handleClearFile}
-                class="size-12 bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm rounded-full transition-all duration-200 text-white"
+                variant="danger"
                 title="Clear current file"
-              >
-                <Icon name="lucide:x" class="size-5 absolute top-50% left-50% -translate-50%" />
-              </button>
+              />
             </Show>
           </div>
 

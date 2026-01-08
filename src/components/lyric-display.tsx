@@ -30,8 +30,10 @@ function LyricLine(props: LyricLineProps) {
       onClick={props.onClick}
       data-active={distance() ? undefined : ''}
       data-past={distance() > 0 ? '' : undefined}
-      class="lyric-line group relative py-1 text-center transition-all ease-out duration-300 cursor-pointer hover:opacity-90 text-(gray-500 2xl) opacity-60 data-[active]:(text-gray-200 opacity-100) data-[past]:(text-gray-400 opacity-70) hover:![filter:none]"
+      class="lyric-line group relative py-1 text-(center gray-500 2xl) opacity-60 transition-all ease-out duration-300 cursor-pointer hover:opacity-90 data-[active]:(text-gray-200 opacity-100) data-[past]:(text-gray-400 opacity-70)"
       style={{ filter: `blur(${blurAmount()}px)` }}
+      onMouseEnter={(e) => (e.currentTarget.style.filter = 'none')}
+      onMouseLeave={(e) => (e.currentTarget.style.filter = `blur(${blurAmount()}px)`)}
     >
       <div class="w-fit max-w-80% mx-auto rounded-xl p-(x-4 y-3) group-hover:bg-gray/10">
         <Show when={props.lyric.rawContent}>
@@ -193,7 +195,7 @@ export function LyricsDisplay() {
           </div>
         }
       >
-        <div class="lyrics-container py-16 px-4">
+        <div class="lyrics-container pt-30vh pb-70vh px-4">
           <For each={state.lyrics}>
             {(lyric, index) => {
               const currentIndex = index()

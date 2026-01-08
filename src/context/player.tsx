@@ -45,6 +45,9 @@ const initialState: PlayerState = {
 
   // Error state
   error: null,
+
+  // Current audio file
+  currentFile: null,
 }
 
 export function PlayerProvider(props: PlayerProviderProps) {
@@ -107,6 +110,9 @@ export function PlayerProvider(props: PlayerProviderProps) {
         setState(initialState)
         return { metadata: null, audioReady: false }
       }
+
+      // Store the current file in state
+      setState('currentFile', file)
 
       cleanup?.()
 

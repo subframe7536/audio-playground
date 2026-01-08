@@ -105,10 +105,10 @@ Interactive audio playground for developers and users who need comprehensive aud
 
 ### Development
 ```bash
-bun dev          # Start development server
-bun build        # Build for production
-bun lint         # Run linter
-bun typecheck    # TypeScript type checking
+bun run dev          # Start development server
+bun run build        # Build for production
+bun run lint         # Run linter
+bun run typecheck    # TypeScript type checking
 ```
 
 ### Testing & Release

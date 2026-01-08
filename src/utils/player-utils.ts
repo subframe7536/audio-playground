@@ -28,6 +28,14 @@ export async function parseMetadata(file: File): Promise<AudioMetadata> {
       duration: property.duration / 1000,
       artwork,
       lyric: tag.lyrics,
+      // Audio properties
+      bitRate: property.bitRate,
+      bitDepth: property.bitDepth,
+      sampleRate: property.sampleRate,
+      channels: property.channels,
+      // Additional tag fields
+      genres: tag.genres && tag.genres.length > 0 ? tag.genres : undefined,
+      year: tag.year && tag.year > 0 ? tag.year : undefined,
     }
   } catch (error) {
     console.warn('Failed to parse metadata:', error)

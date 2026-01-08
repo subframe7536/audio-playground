@@ -8,6 +8,20 @@ export interface AudioMetadata {
   duration: number
   artwork?: string
   lyric?: string
+  // Audio properties
+  bitRate?: number // kbps
+  bitDepth?: number // bits per sample
+  sampleRate?: number // Hz
+  channels?: number
+  // Additional tag fields
+  genres?: string[]
+  year?: number
+  track?: number
+  trackTotal?: number
+  disk?: number
+  diskTotal?: number
+  albumArtists?: string[]
+  composers?: string[]
 }
 
 export interface PlayerState {
@@ -35,6 +49,9 @@ export interface PlayerState {
 
   // Error state
   error: Error | null
+
+  // Current audio file
+  currentFile: File | null
 }
 
 export interface PlayerActions {
