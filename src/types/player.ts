@@ -7,7 +7,7 @@ export interface AudioMetadata {
   album: string
   duration: number
   artwork?: string
-  lyric?: string
+  lyrics?: string
   // Audio properties
   bitRate?: number // kbps
   bitDepth?: number // bits per sample

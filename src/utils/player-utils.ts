@@ -22,20 +22,12 @@ export async function parseMetadata(file: File): Promise<AudioMetadata> {
     }
 
     return {
+      ...tag,
+      ...property,
       title: tag.title || file.name.replace(/\.[^/.]+$/, ''),
-      artist: tag.artists?.[0] || 'Unknown Artist',
+      artist: tag.artists?.join('; ') || 'Unknown Artist',
       album: tag.album || 'Unknown Album',
-      duration: property.duration / 1000,
       artwork,
-      lyric: tag.lyrics,
-      // Audio properties
-      bitRate: property.bitRate,
-      bitDepth: property.bitDepth,
-      sampleRate: property.sampleRate,
-      channels: property.channels,
-      // Additional tag fields
-      genres: tag.genres && tag.genres.length > 0 ? tag.genres : undefined,
-      year: tag.year && tag.year > 0 ? tag.year : undefined,
     }
   } catch (error) {
     console.warn('Failed to parse metadata:', error)

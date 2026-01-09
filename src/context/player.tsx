@@ -73,8 +73,10 @@ export function PlayerProvider(props: PlayerProviderProps) {
     // Update active lyric index
     if (state.lyrics.length > 0) {
       let activeIndex = -1
+      // Apply lookahead only after the first second to prevent skipping lyrics at the start
+      const lookahead = roundedTime > 1 ? 0.5 : 0
       for (let i = 0; i < state.lyrics.length; i++) {
-        if (state.lyrics[i].time <= roundedTime + 0.5) {
+        if (state.lyrics[i].time <= roundedTime + lookahead) {
           activeIndex = i
         } else {
           break
@@ -117,15 +119,15 @@ export function PlayerProvider(props: PlayerProviderProps) {
       cleanup?.()
 
       try {
-        let parsedMetadata = await parseMetadata(file)
+        let meta = await parseMetadata(file)
 
         setState(
           produce((s) => {
-            if (parsedMetadata.lyric) {
-              s.lyrics = parseLyric(parsedMetadata.lyric)
+            if (meta.lyrics) {
+              s.lyrics = parseLyric(meta.lyrics)
             }
-            s.metadata = parsedMetadata
-            s.duration = parsedMetadata.duration
+            s.metadata = meta
+            s.duration = meta.duration
           }),
         )
 
@@ -143,7 +145,7 @@ export function PlayerProvider(props: PlayerProviderProps) {
         setState('isAudioReady', audioReady)
 
         return {
-          metadata: parsedMetadata,
+          metadata: meta,
           audioReady,
         }
       } catch (error) {

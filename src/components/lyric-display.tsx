@@ -10,33 +10,42 @@ interface LyricLineProps {
   isScrolling: boolean
   ref?: (el: HTMLDivElement) => void
   onClick?: () => void
+  onMouseEnter?: () => void
 }
 
 function LyricLine(props: LyricLineProps) {
   const distance = createMemo(() => props.activeIndex - props.index)
 
-  const blurAmount = createMemo(() => {
-    const dis = Math.abs(distance())
-    if (props.isScrolling || dis < 4) {
+  const blurAmount = () => {
+    if (props.isScrolling) {
       return 0
     }
-    const maxBlur = 4
-    return Math.min(dis * 0.2, maxBlur)
-  })
+    let dis = distance()
+    if (dis < -3) {
+      dis = -4 - dis
+    } else if (dis > 1) {
+      dis -= 1
+    } else {
+      dis = 0
+    }
+    return Math.min(dis * 0.5, 4)
+  }
 
   return (
     <div
       ref={props.ref}
       onClick={props.onClick}
+      onMouseEnter={props.onMouseEnter}
       data-active={distance() ? undefined : ''}
       data-past={distance() > 0 ? '' : undefined}
-      class="lyric-line group relative py-1 text-(center gray-500 2xl) opacity-60 transition-all ease-out duration-300 cursor-pointer hover:opacity-90 data-[active]:(text-gray-200 opacity-100) data-[past]:(text-gray-400 opacity-70)"
-      style={{ filter: `blur(${blurAmount()}px)` }}
-      onMouseEnter={(e) => (e.currentTarget.style.filter = 'none')}
-      onMouseLeave={(e) => (e.currentTarget.style.filter = `blur(${blurAmount()}px)`)}
+      class="lyric-line group relative py-1 text-(center gray-500 2xl) opacity-60 transition-all ease-out duration-300 cursor-pointer blur-$blr hover:(opacity-90 blur-none) data-[active]:(text-gray-200 opacity-100) data-[past]:(text-gray-400 opacity-70)"
+      style={{ '--blr': `${blurAmount()}px` }}
     >
       <div class="w-fit max-w-80% mx-auto rounded-xl p-(x-4 y-3) group-hover:bg-gray/10">
-        <Show when={props.lyric.rawContent}>
+        <Show
+          when={props.lyric.rawContent}
+          fallback={<div class="group-data-[active]:animate-pulse font-700">...</div>}
+        >
           <div class="lyric-original mb-1 font-700">{props.lyric.rawContent}</div>
           <Show when={props.lyric.transContent}>
             <div class="lyric-translation font-500 opacity-50 text-lg">
@@ -88,7 +97,7 @@ export function LyricsDisplay() {
 
   const hasValidLyrics = createMemo(() => state.lyrics.some((lyric) => lyric.time >= 0))
 
-  // 1. HELPER: Schedules the auto-scroll to resume after 3 seconds
+  // 1. HELPER: Resume auto-scroll after 3 seconds of no activity
   const scheduleResume = (immediate?: boolean) => {
     const current = resumeTimeout()
     if (current) {
@@ -101,6 +110,7 @@ export function LyricsDisplay() {
       return
     }
 
+    // Schedule resume after 3 seconds of no activity
     const id = setTimeout(() => {
       setIsAutoScrollEnabled(true)
       scrollToActiveLyric(state.activeLyricIndex)
@@ -206,6 +216,7 @@ export function LyricsDisplay() {
                   activeIndex={state.activeLyricIndex}
                   isScrolling={!isAutoScrollEnabled()}
                   onClick={() => handleLyricClick(lyric)}
+                  onMouseEnter={() => !isAutoScrollEnabled() && scheduleResume()}
                   ref={(el) => {
                     lineRefs[currentIndex] = el
                   }}

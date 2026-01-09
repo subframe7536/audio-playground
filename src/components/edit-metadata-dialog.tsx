@@ -58,7 +58,7 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
   const gridFields: FormFieldConfig[][] = [
     [
       { label: 'Year', value: year, setValue: setYear, type: 'number' },
-      { label: 'Genres (comma-separated)', value: genres, setValue: setGenres },
+      { label: 'Genres (separated by ;)', value: genres, setValue: setGenres },
     ],
     [
       { label: 'Track', value: track, setValue: setTrack, type: 'number' },
@@ -69,8 +69,8 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
       { label: 'Disc Total', value: diskTotal, setValue: setDiskTotal, type: 'number' },
     ],
     [
-      { label: 'Album Artists (comma-separated)', value: albumArtists, setValue: setAlbumArtists },
-      { label: 'Composers (comma-separated)', value: composers, setValue: setComposers },
+      { label: 'Album Artists (separated by ;)', value: albumArtists, setValue: setAlbumArtists },
+      { label: 'Composers (separated by ;)', value: composers, setValue: setComposers },
     ],
   ]
 
@@ -89,7 +89,7 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
       setAlbumArtists(props.metadata.albumArtists?.join(', ') || '')
       setComposers(props.metadata.composers?.join(', ') || '')
       setComment('')
-      setLyrics(props.metadata.lyric || '')
+      setLyrics(props.metadata.lyrics || '')
     }
   })
 
@@ -164,7 +164,7 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
           file,
           'albumArtists',
           albumArtists()
-            .split(',')
+            .split(';')
             .map((a) => a.trim())
             .filter(Boolean),
         )
@@ -175,7 +175,7 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
           file,
           'composers',
           composers()
-            .split(',')
+            .split(';')
             .map((c) => c.trim())
             .filter(Boolean),
         )
