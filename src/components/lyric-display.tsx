@@ -36,13 +36,13 @@ function LyricLine(props: LyricLineProps) {
       onClick={props.onClick}
       data-active={distance() ? undefined : ''}
       data-past={distance() > 0 ? '' : undefined}
-      class="lyric-line parent relative py-1 text-(center gray-500 2xl) opacity-60 transition-all ease-out duration-300 cursor-pointer blur-$blr hover:opacity-90 group-hover:blur-none data-[active]:(text-gray-200 opacity-100) data-[past]:(text-gray-400 opacity-70)"
+      class="lyric-line group parent relative py-1 text-(center gray-500 2xl) opacity-60 transition-all ease-out duration-300 cursor-pointer blur-$blr hover:opacity-90 group-hover:blur-none data-[active]:(text-gray-200 opacity-100) data-[past]:(text-gray-400 opacity-70)"
       style={{ '--blr': `${blurAmount()}px` }}
     >
       <div class="w-fit max-w-80% mx-auto rounded-xl p-(x-4 y-3) parent-hover:bg-gray/10">
         <Show
           when={props.lyric.rawContent}
-          fallback={<div class="parent-data-[active]:animate-pulse font-700">...</div>}
+          fallback={<div class="group-data-[active]:animate-pulse font-700">...</div>}
         >
           <div class="lyric-original mb-1 font-700">{props.lyric.rawContent}</div>
           <Show when={props.lyric.transContent}>

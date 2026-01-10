@@ -34,35 +34,6 @@ export function MetadataDisplay() {
     return parts
   })
 
-  const buildAudioInfo = () => {
-    const parts = []
-
-    if (state.metadata?.bitDepth) {
-      parts.push(`${state.metadata.bitDepth}-bit`)
-    }
-
-    if (state.metadata?.sampleRate) {
-      const khz = state.metadata.sampleRate / 1000
-      parts.push(`${khz}kHz`)
-    }
-
-    if (state.metadata?.bitRate) {
-      parts.push(`${state.metadata.bitRate}kbps`)
-    }
-
-    if (state.metadata?.channels) {
-      const channelText =
-        state.metadata.channels === 1
-          ? 'Mono'
-          : state.metadata.channels === 2
-            ? 'Stereo'
-            : `${state.metadata.channels}ch`
-      parts.push(channelText)
-    }
-
-    return parts.length > 0 ? parts.join(' / ') : null
-  }
-
   return (
     <>
       <div class="text-white space-y-4 mb-4">
@@ -105,11 +76,6 @@ export function MetadataDisplay() {
               )}
             </For>
           </div>
-        </Show>
-
-        {/* Audio info */}
-        <Show when={buildAudioInfo()}>
-          {(audioInfo) => <p class="text-(gray-400 sm)">{audioInfo()}</p>}
         </Show>
       </div>
 

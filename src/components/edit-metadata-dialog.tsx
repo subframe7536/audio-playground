@@ -1,4 +1,5 @@
-import { createSignal, Show, For, createEffect, on } from 'solid-js'
+import { createSignal, Show, For, createEffect, on, Switch, Match } from 'solid-js'
+import { createStore } from 'solid-js/store'
 import { Icon } from './icon'
 import { FormField } from './form-field'
 import { Button } from './button'
@@ -22,55 +23,72 @@ interface EditMetadataDialogProps {
 
 type TabType = 'metadata' | 'artwork' | 'lyric'
 
+interface MetadataFormState {
+  title: string
+  artist: string
+  album: string
+  year: number | ''
+  genres: string
+  track: number | ''
+  trackTotal: number | ''
+  disk: number | ''
+  diskTotal: number | ''
+  albumArtists: string
+  composers: string
+  comment: string
+  lyrics: string
+}
+
 interface FormFieldConfig {
   label: string
-  value: () => string | number | ''
-  setValue: (val: string | number | '') => void
+  key: keyof MetadataFormState
   type?: 'text' | 'number'
   placeholder?: string
 }
 
 export function EditMetadataDialog(props: EditMetadataDialogProps) {
   const [activeTab, setActiveTab] = createSignal<TabType>('metadata')
-  const [title, setTitle] = createSignal('')
-  const [artist, setArtist] = createSignal('')
-  const [album, setAlbum] = createSignal('')
-  const [year, setYear] = createSignal<number | ''>('')
-  const [genres, setGenres] = createSignal<string>('')
-  const [track, setTrack] = createSignal<number | ''>('')
-  const [trackTotal, setTrackTotal] = createSignal<number | ''>('')
-  const [disk, setDisk] = createSignal<number | ''>('')
-  const [diskTotal, setDiskTotal] = createSignal<number | ''>('')
-  const [albumArtists, setAlbumArtists] = createSignal<string>('')
-  const [composers, setComposers] = createSignal<string>('')
-  const [comment, setComment] = createSignal('')
-  const [lyrics, setLyrics] = createSignal('')
+  const [formState, setFormState] = createStore<MetadataFormState>({
+    title: '',
+    artist: '',
+    album: '',
+    year: '',
+    genres: '',
+    track: '',
+    trackTotal: '',
+    disk: '',
+    diskTotal: '',
+    albumArtists: '',
+    composers: '',
+    comment: '',
+    lyrics: '',
+  })
   const [newArtwork, setNewArtwork] = createSignal<File | null>(null)
   const [isProcessing, setIsProcessing] = createSignal(false)
 
   // Define form fields configuration
   const basicFields: FormFieldConfig[] = [
-    { label: 'Title', value: title, setValue: setTitle },
-    { label: 'Artist', value: artist, setValue: setArtist },
-    { label: 'Album', value: album, setValue: setAlbum },
+    { label: 'Title', key: 'title' },
+    { label: 'Artist', key: 'artist' },
+    { label: 'Album', key: 'album' },
   ]
 
   const gridFields: FormFieldConfig[][] = [
     [
-      { label: 'Year', value: year, setValue: setYear, type: 'number' },
-      { label: 'Genres (separated by ;)', value: genres, setValue: setGenres },
+      { label: 'Year', key: 'year', type: 'number' },
+      { label: 'Genres (separated by ;)', key: 'genres' },
     ],
     [
-      { label: 'Track', value: track, setValue: setTrack, type: 'number' },
-      { label: 'Track Total', value: trackTotal, setValue: setTrackTotal, type: 'number' },
+      { label: 'Track', key: 'track', type: 'number' },
+      { label: 'Track Total', key: 'trackTotal', type: 'number' },
     ],
     [
-      { label: 'Disc', value: disk, setValue: setDisk, type: 'number' },
-      { label: 'Disc Total', value: diskTotal, setValue: setDiskTotal, type: 'number' },
+      { label: 'Disc', key: 'disk', type: 'number' },
+      { label: 'Disc Total', key: 'diskTotal', type: 'number' },
     ],
     [
-      { label: 'Album Artists (separated by ;)', value: albumArtists, setValue: setAlbumArtists },
-      { label: 'Composers (separated by ;)', value: composers, setValue: setComposers },
+      { label: 'Album Artists (separated by ;)', key: 'albumArtists' },
+      { label: 'Composers (separated by ;)', key: 'composers' },
     ],
   ]
 
@@ -82,19 +100,21 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
         if (!meta) {
           return
         }
-        setTitle(meta.title || '')
-        setArtist(meta.artist || '')
-        setAlbum(meta.album || '')
-        setYear(meta.year || '')
-        setGenres(meta.genres?.join(', ') || '')
-        setTrack(meta.track || '')
-        setTrackTotal(meta.trackTotal || '')
-        setDisk(meta.disk || '')
-        setDiskTotal(meta.diskTotal || '')
-        setAlbumArtists(meta.albumArtists?.join(', ') || '')
-        setComposers(meta.composers?.join(', ') || '')
-        setComment('')
-        setLyrics(meta.lyrics || '')
+        setFormState({
+          title: meta.title || '',
+          artist: meta.artist || '',
+          album: meta.album || '',
+          year: meta.year || '',
+          genres: meta.genres?.join(', ') || '',
+          track: meta.track || '',
+          trackTotal: meta.trackTotal || '',
+          disk: meta.disk || '',
+          diskTotal: meta.diskTotal || '',
+          albumArtists: meta.albumArtists?.join(', ') || '',
+          composers: meta.composers?.join(', ') || '',
+          comment: '',
+          lyrics: meta.lyrics || '',
+        })
       },
       { defer: true },
     ),
@@ -124,76 +144,76 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
       let file = createFileFromBuffer(props.originalFile.name, buffer)
 
       // Update tags
-      updateTag(file, 'title', title())
+      updateTag(file, 'title', formState.title)
       updateTag(
         file,
         'artists',
-        artist()
+        formState.artist
           .split(',')
           .map((a) => a.trim())
           .filter(Boolean),
       )
-      updateTag(file, 'album', album())
+      updateTag(file, 'album', formState.album)
 
-      if (year() !== '') {
-        updateTag(file, 'year', Number(year()))
+      if (formState.year !== '') {
+        updateTag(file, 'year', Number(formState.year))
       }
 
-      if (genres()) {
+      if (formState.genres) {
         updateTag(
           file,
           'genres',
-          genres()
+          formState.genres
             .split(/[,;]/)
             .map((g) => g.trim())
             .filter(Boolean),
         )
       }
 
-      if (track() !== '') {
-        updateTag(file, 'track', Number(track()))
+      if (formState.track !== '') {
+        updateTag(file, 'track', Number(formState.track))
       }
 
-      if (trackTotal() !== '') {
-        updateTag(file, 'trackTotal', Number(trackTotal()))
+      if (formState.trackTotal !== '') {
+        updateTag(file, 'trackTotal', Number(formState.trackTotal))
       }
 
-      if (disk() !== '') {
-        updateTag(file, 'disk', Number(disk()))
+      if (formState.disk !== '') {
+        updateTag(file, 'disk', Number(formState.disk))
       }
 
-      if (diskTotal() !== '') {
-        updateTag(file, 'diskTotal', Number(diskTotal()))
+      if (formState.diskTotal !== '') {
+        updateTag(file, 'diskTotal', Number(formState.diskTotal))
       }
 
-      if (albumArtists()) {
+      if (formState.albumArtists) {
         updateTag(
           file,
           'albumArtists',
-          albumArtists()
+          formState.albumArtists
             .split(';')
             .map((a) => a.trim())
             .filter(Boolean),
         )
       }
 
-      if (composers()) {
+      if (formState.composers) {
         updateTag(
           file,
           'composers',
-          composers()
+          formState.composers
             .split(';')
             .map((c) => c.trim())
             .filter(Boolean),
         )
       }
 
-      if (comment()) {
-        updateTag(file, 'comment', comment())
+      if (formState.comment) {
+        updateTag(file, 'comment', formState.comment)
       }
 
-      if (lyrics()) {
-        updateTag(file, 'lyrics', lyrics())
+      if (formState.lyrics) {
+        updateTag(file, 'lyrics', formState.lyrics)
       }
 
       // Update artwork if new one is selected
@@ -230,7 +250,7 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
       >
         {/* Dialog */}
         <div
-          class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%] w-full max-w-2xl max-h-[90vh]"
+          class="fixed left-50% top-50% z-50 translate--50% max-w-2xl max-h-90vh"
           onClick={(e) => e.stopPropagation()}
         >
           <div class="overflow-hidden rounded-lg border border-gray-800 bg-gray-900 shadow-lg">
@@ -268,99 +288,107 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
             {/* Content */}
             <div class="max-h-[calc(90vh-200px)] overflow-y-auto px-6 py-6">
               {/* Metadata Tab */}
-              <Show when={activeTab() === 'metadata'}>
-                <div class="space-y-4">
-                  {/* Basic Fields */}
-                  <For each={basicFields}>
-                    {(field) => (
-                      <FormField
-                        label={field.label}
-                        value={field.value()}
-                        onInput={field.setValue}
-                        type={field.type}
-                        placeholder={field.placeholder}
-                      />
-                    )}
-                  </For>
+              <Switch>
+                <Match when={activeTab() === 'metadata'}>
+                  <div class="space-y-4">
+                    {/* Basic Fields */}
+                    <For each={basicFields}>
+                      {(field) => (
+                        <FormField
+                          label={field.label}
+                          value={formState[field.key]}
+                          onInput={(val) => setFormState(field.key, val)}
+                          type={field.type}
+                          placeholder={field.placeholder}
+                        />
+                      )}
+                    </For>
 
-                  {/* Grid Fields - 2 columns */}
-                  <For each={gridFields}>
-                    {(rowFields) => (
-                      <div class="grid grid-cols-2 gap-4">
-                        <For each={rowFields}>
-                          {(field) => (
-                            <FormField
-                              label={field.label}
-                              value={field.value()}
-                              onInput={field.setValue}
-                              type={field.type}
-                              placeholder={field.placeholder}
-                            />
-                          )}
-                        </For>
+                    {/* Grid Fields - 2 columns */}
+                    <For each={gridFields}>
+                      {(rowFields) => (
+                        <div class="grid grid-cols-2 gap-4">
+                          <For each={rowFields}>
+                            {(field) => (
+                              <FormField
+                                label={field.label}
+                                value={formState[field.key]}
+                                onInput={(val) => setFormState(field.key, val)}
+                                type={field.type}
+                                placeholder={field.placeholder}
+                              />
+                            )}
+                          </For>
+                        </div>
+                      )}
+                    </For>
+
+                    {/* Comment */}
+                    <FormField
+                      label="Comment"
+                      value={formState.comment}
+                      class="max-h-40"
+                      onInput={(val) => setFormState('comment', String(val))}
+                      rows={3}
+                    />
+                  </div>
+                </Match>
+
+                {/* Artwork Tab */}
+                <Match when={activeTab() === 'artwork'}>
+                  <div class="space-y-6">
+                    {/* Current Artwork Preview */}
+                    <Show when={props.metadata?.artwork}>
+                      <div class="space-y-2">
+                        <label class="text-sm font-medium leading-none text-gray-200">
+                          Current Artwork
+                        </label>
+                        <div class="rounded-md border border-gray-800 overflow-hidden bg-gray-800/50 p-4">
+                          <img
+                            src={props.metadata!.artwork}
+                            alt="Current album artwork"
+                            class="w-full max-w-md mx-auto rounded-md"
+                          />
+                        </div>
                       </div>
-                    )}
-                  </For>
+                    </Show>
 
-                  {/* Comment */}
-                  <FormField label="Comment" value={comment()} onInput={setComment} rows={3} />
-                </div>
-              </Show>
-
-              {/* Artwork Tab */}
-              <Show when={activeTab() === 'artwork'}>
-                <div class="space-y-6">
-                  {/* Current Artwork Preview */}
-                  <Show when={props.metadata?.artwork}>
+                    {/* New Artwork Upload */}
                     <div class="space-y-2">
                       <label class="text-sm font-medium leading-none text-gray-200">
-                        Current Artwork
+                        Upload New Artwork
                       </label>
-                      <div class="rounded-md border border-gray-800 overflow-hidden bg-gray-800/50 p-4">
-                        <img
-                          src={props.metadata!.artwork}
-                          alt="Current album artwork"
-                          class="w-full max-w-md mx-auto rounded-md"
+                      <div class="grid w-full items-center gap-1.5">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleArtworkChange}
+                          class="flex w-full rounded-md border-(1 gray-700) bg-gray-800/50 p-(x-3 y-2) h-10 text-(sm gray-400) file:(border-0 bg-transparent text-sm font-medium text-white mr-4) placeholder:(text-gray-500) focus-visible:(outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-900) disabled:(cursor-not-allowed opacity-50) cursor-pointer hover:(bg-gray-800/70) transition-colors"
                         />
+                        <Show when={newArtwork()}>
+                          <p class="text-sm text-gray-400">Selected: {newArtwork()!.name}</p>
+                        </Show>
                       </div>
                     </div>
-                  </Show>
-
-                  {/* New Artwork Upload */}
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium leading-none text-gray-200">
-                      Upload New Artwork
-                    </label>
-                    <div class="grid w-full items-center gap-1.5">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleArtworkChange}
-                        class="flex w-full rounded-md border-(1 gray-700) bg-gray-800/50 p-(x-3 y-2) h-10 text-(sm gray-400) file:(border-0 bg-transparent text-sm font-medium text-white mr-4) placeholder:(text-gray-500) focus-visible:(outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-900) disabled:(cursor-not-allowed opacity-50) cursor-pointer hover:(bg-gray-800/70) transition-colors"
-                      />
-                      <Show when={newArtwork()}>
-                        <p class="text-sm text-gray-400">Selected: {newArtwork()!.name}</p>
-                      </Show>
-                    </div>
                   </div>
-                </div>
-              </Show>
+                </Match>
 
-              {/* Lyrics Tab */}
-              <Show when={activeTab() === 'lyric'}>
-                <div class="space-y-2">
-                  <FormField
-                    label="Lyrics (LRC format supported)"
-                    value={lyrics()}
-                    onInput={setLyrics}
-                    rows={15}
-                    placeholder="Enter lyrics with LRC timestamps"
-                  />
-                  <p class="text-xs text-gray-400">
-                    Tip: Use LRC format with timestamps for synchronized lyrics
-                  </p>
-                </div>
-              </Show>
+                {/* Lyrics Tab */}
+                <Match when={activeTab() === 'lyric'}>
+                  <div class="space-y-2">
+                    <FormField
+                      label="Lyrics (LRC format supported)"
+                      value={formState.lyrics}
+                      onInput={(val) => setFormState('lyrics', String(val))}
+                      rows={15}
+                      placeholder="Enter lyrics with LRC timestamps"
+                    />
+                    <p class="text-xs text-gray-400">
+                      Tip: Use LRC format with timestamps for synchronized lyrics
+                    </p>
+                  </div>
+                </Match>
+              </Switch>
             </div>
 
             {/* Footer */}

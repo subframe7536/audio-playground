@@ -7,6 +7,7 @@ interface FormFieldProps {
   onInput: (value: string | number) => void
   placeholder?: string
   rows?: number
+  class?: string
 }
 
 export function FormField(props: FormFieldProps) {
@@ -39,7 +40,7 @@ export function FormField(props: FormFieldProps) {
             value={props.value}
             onInput={handleInput}
             placeholder={props.placeholder}
-            class={inputClasses}
+            class={inputClasses + (props.class ? ' ' + props.class : '')}
           />
         }
       >
@@ -48,7 +49,7 @@ export function FormField(props: FormFieldProps) {
           onInput={handleInput}
           rows={props.rows}
           placeholder={props.placeholder}
-          class={textareaClasses}
+          class={textareaClasses + (props.class ? ' ' + props.class : '')}
         />
       </Show>
     </div>

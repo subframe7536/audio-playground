@@ -1,10 +1,12 @@
 import { usePlayerContext } from '~/context/player'
 import { Icon } from '~/components/icon'
 import { formatTime } from '~/utils/player-utils'
-import { Index, Show } from 'solid-js'
+import { createMemo, Index, Show } from 'solid-js'
+import { IconButton } from './icon-button'
 
 export function AudioControls() {
   const [state, actions] = usePlayerContext()
+  let lastVolume = 0
 
   const handlePlayPause = async () => {
     if (state.isPlaying) {
@@ -38,10 +40,54 @@ export function AudioControls() {
     actions.seek(seekTime)
   }
 
+  const volumeIcon = createMemo(() => {
+    if (state.volume === 0) {
+      return 'lucide:volume-off'
+    }
+    return state.volume < 0.5 ? 'lucide:volume-1' : 'lucide:volume-2'
+  })
+
+  const handleVolumeChange = (event: MouseEvent) => {
+    const volumeBar = event.currentTarget as HTMLElement
+    const rect = volumeBar.getBoundingClientRect()
+    const clickX = event.clientX - rect.left
+    const percentage = Math.max(0, Math.min(1, clickX / rect.width))
+    actions.setVolume(percentage)
+  }
+
+  const buildAudioInfo = createMemo(() => {
+    const parts = []
+
+    if (state.metadata?.bitDepth) {
+      parts.push(`${state.metadata.bitDepth}-bit`)
+    }
+
+    if (state.metadata?.sampleRate) {
+      const khz = state.metadata.sampleRate / 1000
+      parts.push(`${khz}kHz`)
+    }
+
+    if (state.metadata?.bitRate) {
+      parts.push(`${state.metadata.bitRate}kbps`)
+    }
+
+    if (state.metadata?.channels) {
+      const channelText =
+        state.metadata.channels === 1
+          ? 'Mono'
+          : state.metadata.channels === 2
+            ? 'Stereo'
+            : `${state.metadata.channels}ch`
+      parts.push(channelText)
+    }
+
+    return parts.length > 0 ? parts.join(' / ') : null
+  })
+
   return (
     <>
       {/* Progress Bar */}
-      <div class="w-full mt-4 group">
+      <div class="w-full mt-8 group">
         <div
           class={`relative w-full ${state.waveform ? 'h-12' : 'h-1 group-hover:h-2'} cursor-pointer transition-all duration-300`}
           style={{
@@ -89,14 +135,21 @@ export function AudioControls() {
       </div>
 
       {/* Time Display */}
-      <div class="flex justify-between items-center text-sm text-white/70 py-2">
+      <div class="flex justify-between text-sm text-white/70 py-2 relative">
         <span>{formatTime(state.currentTime)}</span>
+        <Show when={buildAudioInfo()}>
+          {(audioInfo) => (
+            <span class="text-(xs white/30) absolute left-50% top-55% translate--50%">
+              {audioInfo()}
+            </span>
+          )}
+        </Show>
         <span>{formatTime(state.duration)}</span>
       </div>
 
-      {/* Control Buttons */}
-      <div class="flex mt-8 items-center justify-center gap-8 children:bg-transparent">
-        {/* Previous Button */}
+      {/* Control Buttons and Volume - Optimized Layout */}
+      <div class="flex mt-6 items-center justify-around gap-4 children:bg-transparent w-60% mx-auto">
+        {/* Left: Previous Button */}
         <button
           onClick={handlePrevious}
           class="flex items-center justify-center w-8 h-8 text-white/70 hover:text-white transition-colors"
@@ -105,7 +158,7 @@ export function AudioControls() {
           <Icon name="lucide:skip-back" class="w-6 h-6" />
         </button>
 
-        {/* Play/Pause Button */}
+        {/* Center: Play/Pause Button */}
         <button
           onClick={handlePlayPause}
           disabled={!state.isAudioReady}
@@ -124,7 +177,7 @@ export function AudioControls() {
           />
         </button>
 
-        {/* Next Button */}
+        {/* Right: Next Button */}
         <button
           onClick={handleNext}
           class="flex items-center justify-center w-8 h-8 text-white/70 hover:text-white transition-colors"
@@ -132,6 +185,50 @@ export function AudioControls() {
         >
           <Icon name="lucide:skip-forward" class="w-6 h-6" />
         </button>
+      </div>
+
+      {/* Volume Control */}
+      <div class="flex items-center gap-3 mt-6">
+        <IconButton
+          icon={volumeIcon()}
+          variant="plain"
+          onClick={() => {
+            if (lastVolume === 0) {
+              lastVolume = state.volume
+              actions.setVolume(0)
+            } else {
+              actions.setVolume(lastVolume)
+              lastVolume = 0
+            }
+          }}
+        />
+        <div class="flex-1 group py-2">
+          <div
+            class="relative w-full h-1 bg-white/20 rounded-full cursor-pointer group-hover:h-2 transition-height duration-200"
+            style={{
+              '--volume-percent': `${state.volume * 100}%`,
+            }}
+            onClick={handleVolumeChange}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft') {
+                actions.setVolume(Math.max(0, state.volume - 0.05))
+              } else if (e.key === 'ArrowRight') {
+                actions.setVolume(Math.min(1, state.volume + 0.05))
+              }
+            }}
+            role="slider"
+            tabIndex={0}
+            aria-label="Volume"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(state.volume * 100)}
+          >
+            <div class="absolute top-0 left-0 h-full bg-white rounded-full transition-all duration-300 w-$volume-percent" />
+          </div>
+        </div>
+        <span class="text-xs text-white/50 w-8 text-right tabular-nums">
+          {Math.round(state.volume * 100)}
+        </span>
       </div>
     </>
   )
