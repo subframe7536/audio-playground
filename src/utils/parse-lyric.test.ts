@@ -127,11 +127,11 @@ describe('parseLyric', () => {
     // [00:15.67] comes after <00:14.56> so it's not leading
     // Second line: has leading timestamp [00:25.67]
     // Third line: has leading timestamp [00:35.78] with content
-    expect(result).toHaveLength(4)
+    // With merging: multiple consecutive empty lines are merged into one
+    expect(result).toHaveLength(2)
     expect(result[0].rawContent).toBe('')
-    expect(result[1].rawContent).toBe('')
-    expect(result[2].rawContent).toBe('')
-    expect(result[3].rawContent).toBe('Some text')
+    expect(result[0].time).toBe(12.34) // First empty line timestamp
+    expect(result[1].rawContent).toBe('Some text')
   })
 
   test('preserves content without timestamp tags', () => {
@@ -282,7 +282,7 @@ Third line without timestamp`
   })
 
   test('trims whitespace from content', () => {
-    const lrc = `[00:12.34]   First line with spaces   
+    const lrc = `[00:12.34]   First line with spaces
 [00:25.67]	Second line with tabs	`
 
     const result = parseLyric(lrc)
@@ -303,6 +303,23 @@ Third line without timestamp`
     expect(result[0].rawContent).toBe('First line')
     expect(result[1].rawContent).toBe('')
     expect(result[2].rawContent).toBe('Third line')
+  })
+
+  test('merges consecutive empty lines into one', () => {
+    const lrc = `[00:12.00]First line
+[00:12.30]
+[00:12.50]
+[00:13.00]
+[00:14.00]Second line`
+
+    const result = parseLyric(lrc)
+
+    // Multiple consecutive empty lines should be merged into one
+    expect(result).toHaveLength(3)
+    expect(result[0].rawContent).toBe('First line')
+    expect(result[1].rawContent).toBe('')
+    expect(result[1].time).toBe(12.3) // First empty line timestamp
+    expect(result[2].rawContent).toBe('Second line')
   })
 
   test('maintains correct index sequence', () => {
@@ -327,22 +344,19 @@ Third line without timestamp`
 
     const result = parseLyric(lrc)
 
-    expect(result).toHaveLength(6)
+    // With merging: multiple leading timestamps on empty line are merged into one
+    expect(result).toHaveLength(4)
     // First line: multiple leading timestamps, both used
     expect(result[0].time).toBe(12.34)
     expect(result[0].rawContent).toBe('Line with content')
     expect(result[1].time).toBe(13.45)
     expect(result[1].rawContent).toBe('Line with content')
-    // Second line: no content, uses all leading timestamps
+    // Second line: consecutive empty lines merged into one (uses first timestamp)
     expect(result[2].time).toBe(25.67)
     expect(result[2].rawContent).toBe('')
-    expect(result[3].time).toBe(26.78)
-    expect(result[3].rawContent).toBe('')
-    expect(result[4].time).toBe(27.89)
-    expect(result[4].rawContent).toBe('')
     // Third line: only leading timestamp used, [00:36.01] after content is ignored
-    expect(result[5].time).toBe(35.9)
-    expect(result[5].rawContent).toBe('Another  line')
+    expect(result[3].time).toBe(35.9)
+    expect(result[3].rawContent).toBe('Another  line')
   })
 
   test('ignores timestamps and karaoke tags after lyric content', () => {
@@ -363,5 +377,65 @@ Third line without timestamp`
     expect(result[2].rawContent).toBe('Multiple leading  timestamps')
     expect(result[3].time).toBe(146.78) // 2*60 + 26.78
     expect(result[3].rawContent).toBe('Multiple leading  timestamps')
+  })
+
+  test('ignores short empty lines when option is enabled', () => {
+    const lrc = `[00:12.00]First line
+[00:12.30]
+[00:13.00]Second line
+[00:13.50]
+[00:14.00]Third line`
+
+    // Without the option, all lines including empty ones are included
+    const resultWithoutOption = parseLyric(lrc)
+    expect(resultWithoutOption).toHaveLength(5)
+    expect(resultWithoutOption[1].rawContent).toBe('')
+    expect(resultWithoutOption[3].rawContent).toBe('')
+
+    // With the option enabled, short empty lines (< 1 second) are filtered out
+    // [00:12.30] has duration 13.00 - 12.30 = 0.70s < 1s -> filtered
+    // [00:13.50] has duration 14.00 - 13.50 = 0.50s < 1s -> filtered
+    const resultWithOption = parseLyric(lrc, { ignoreShortEmptyLines: true })
+    expect(resultWithOption).toHaveLength(3)
+    expect(resultWithOption[0].rawContent).toBe('First line')
+    expect(resultWithOption[1].rawContent).toBe('Second line')
+    expect(resultWithOption[2].rawContent).toBe('Third line')
+  })
+
+  test('keeps long empty lines even with ignoreShortEmptyLines enabled', () => {
+    const lrc = `[00:12.00]First line
+[00:12.30]
+[00:14.00]Second line
+[00:15.00]
+[00:20.00]Third line`
+
+    const result = parseLyric(lrc, { ignoreShortEmptyLines: true })
+
+    // The first empty line (1.7s duration) is kept
+    // The second empty line (5s duration) is kept
+    expect(result).toHaveLength(5)
+    expect(result[0].rawContent).toBe('First line')
+    expect(result[1].rawContent).toBe('')
+    expect(result[1].time).toBe(12.3)
+    expect(result[2].rawContent).toBe('Second line')
+    expect(result[3].rawContent).toBe('')
+    expect(result[3].time).toBe(15.0)
+    expect(result[4].rawContent).toBe('Third line')
+  })
+
+  test('respects custom minEmptyLineDuration', () => {
+    const lrc = `[00:12.00]First line
+[00:12.50]
+[00:14.00]Second line`
+
+    // With 2 second minimum, the 1.5s empty line is filtered
+    const result = parseLyric(lrc, {
+      ignoreShortEmptyLines: true,
+      minEmptyLineDuration: 2.0,
+    })
+
+    expect(result).toHaveLength(2)
+    expect(result[0].rawContent).toBe('First line')
+    expect(result[1].rawContent).toBe('Second line')
   })
 })

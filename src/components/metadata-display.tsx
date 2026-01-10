@@ -2,10 +2,23 @@ import { createMemo, createSignal, For, Show } from 'solid-js'
 import { usePlayerContext } from '~/context/player'
 import { Icon } from './icon'
 import { EditMetadataDialog } from './edit-metadata-dialog'
+import { IconButton } from './icon-button'
 
 export function MetadataDisplay() {
   const [state] = usePlayerContext()
   const [isEditDialogOpen, setIsEditDialogOpen] = createSignal(false)
+  const qualityBg = createMemo(() => {
+    switch (state.metadata?.quality) {
+      case 'HQ':
+        return 'bg-green-200/30'
+      case 'Hi-Res':
+        return 'bg-yellow-400/30'
+      case 'SQ':
+        return 'bg-blue-300/30'
+      default:
+        return 'bg-white/20'
+    }
+  })
 
   const buildMetadataLine = createMemo(() => {
     const parts = []
@@ -54,32 +67,42 @@ export function MetadataDisplay() {
     <>
       <div class="text-white space-y-4 mb-4">
         {/* Title and Artist with Edit Button */}
-        <div class="space-y-1">
+        <Show when={state.metadata}>
           <div class="flex items-start justify-between gap-2">
-            <div class="flex-1">
-              <h1 class="text-xl font-bold text-white/90">{state.metadata?.title}</h1>
-              <p class="text-lg text-white/60">
-                {state.metadata?.artist} · {state.metadata?.album}
-              </p>
+            <div>
+              <h1 class="text-2xl mb-4 font-bold text-white/90">{state.metadata?.title}</h1>
+              <div class="text-(sm white/60) flex gap-1 items-center mb-2">
+                <Icon name="lucide:user" />
+                {state.metadata?.artist}
+              </div>
+              <div class="text-(sm white/60) flex gap-1 items-center align-end">
+                <Icon name="lucide:disc" />
+                {state.metadata?.album}
+              </div>
             </div>
             <Show when={state.currentFile}>
-              <button
+              <IconButton
+                icon="lucide:ellipsis"
+                variant="plain"
                 onClick={() => setIsEditDialogOpen(true)}
-                class="p-2 rounded-lg bg-transparent line-height-none hover:bg-white/10 transition-colors shrink-0"
-                aria-label="Edit metadata"
                 title="Edit metadata"
-              >
-                <Icon name="lucide:pencil" class="size-5 text-white/60 hover:text-white" />
-              </button>
+              />
             </Show>
           </div>
-        </div>
+        </Show>
 
         {/* Metadata line */}
         <Show when={buildMetadataLine().length > 0}>
           <div class="flex gap-2">
+            <Show when={state.metadata}>
+              <span class={qualityBg() + ' p-(x-2 y-1) rounded-md text-xs'}>
+                {state.metadata?.quality}
+              </span>
+            </Show>
             <For each={buildMetadataLine()}>
-              {(item) => <span class="rounded px-1 text-(gray-400 sm) b-(1 gray-400)">{item}</span>}
+              {(item) => (
+                <span class="bg-white/20 text-gray-200 p-(x-2 y-1) rounded-md text-xs">{item}</span>
+              )}
             </For>
           </div>
         </Show>

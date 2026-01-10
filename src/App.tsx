@@ -26,16 +26,6 @@ function ErrorFallback(props: { error: Error; reset: () => void }) {
   )
 }
 
-// Loading component
-function LoadingSpinner() {
-  return (
-    <div class="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
-      <Icon name="lucide:loader-2" class="w-12 h-12 animate-spin text-white mb-4" />
-      <p class="text-gray-300">Loading...</p>
-    </div>
-  )
-}
-
 // Main player interface component
 function PlayerInterface() {
   const [state, { setAudioFile, hasFile }] = usePlayerContext()
@@ -95,101 +85,105 @@ function PlayerInterface() {
   }
 
   return (
-    <>
-      <Show when={!state.isLoading} fallback={<LoadingSpinner />}>
-        <div class="relative h-screen max-w-300 mx-a">
-          {/* Background Layer */}
-          <BackgroundLayer opacity={0.7} blurIntensity={32} />
+    <div class="relative h-screen max-w-300 mx-a">
+      {/* Background Layer */}
+      <BackgroundLayer opacity={0.7} blurIntensity={32} />
 
-          {/* Top Right Controls */}
-          <div class="absolute top-4 right-4 z-20 flex gap-2">
-            <IconButton
-              icon="lucide:circle-play"
-              onClick={handleDemoMode}
-              variant="primary"
-              title="Try demo mode"
-            />
-            <IconButton
-              icon="lucide:upload"
-              onClick={handleUploadClick}
-              variant="default"
-              title="Upload audio file"
-            />
-            <Show when={hasFile()}>
-              <IconButton
-                icon="lucide:x"
-                onClick={handleClearFile}
-                variant="danger"
-                title="Clear current file"
-              />
-            </Show>
+      {/* Top Right Controls */}
+      <div class="absolute top-4 right-4 z-20 flex gap-2">
+        <IconButton
+          icon="lucide:circle-play"
+          onClick={handleDemoMode}
+          variant="primary"
+          title="Try demo mode"
+        />
+        <IconButton
+          icon="lucide:upload"
+          onClick={handleUploadClick}
+          variant="default"
+          title="Upload audio file"
+        />
+        <Show when={hasFile()}>
+          <IconButton
+            icon="lucide:x"
+            onClick={handleClearFile}
+            variant="danger"
+            title="Clear current file"
+          />
+        </Show>
+      </div>
+
+      {/* Hidden file input */}
+      <input
+        ref={(el) => (fileInputRef = el)}
+        type="file"
+        accept="audio/*"
+        onChange={handleFileSelect}
+        class="hidden"
+      />
+
+      {/* Main Content - Two Column Layout */}
+      <div class="relative z-10 flex h-screen p-8 gap-6 md:gap-12 items-center justify-center">
+        {/* Left Column - Album Cover, Metadata, and Controls */}
+        <div class="flex-shrink-0 w-96 max-w-96">
+          {/* Album Cover */}
+          <div class="mb-6">
+            <div
+              class={`aspect-square w-full bg-white/10 rounded-2xl flex items-center justify-center relative ${!hasFile() ? 'cursor-pointer hover:bg-white/20 transition-all duration-200' : ''}`}
+              onClick={handleCoverClick}
+              onKeyDown={handleCoverKeyDown}
+              tabIndex={!hasFile() ? 0 : -1}
+              role={!hasFile() ? 'button' : undefined}
+              aria-label={!hasFile() ? 'Click to upload audio file' : undefined}
+            >
+              {/* Loading Spinner Overlay */}
+              <Show when={state.isLoading}>
+                <div class="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center z-10">
+                  <Icon name="lucide:loader-2" class="w-12 h-12 animate-spin text-white mb-4" />
+                  <p class="text-gray-300">Loading...</p>
+                </div>
+              </Show>
+
+              <Show
+                when={state.metadata?.artwork}
+                fallback={
+                  <div class="text-center text-white/60">
+                    <Icon name="lucide:music" class="w-16 h-16 mx-auto mb-2" />
+                    <Show
+                      when={hasFile()}
+                      fallback={
+                        <div>
+                          <span class="text-lg block mb-2">Click to upload</span>
+                          <span class="text-sm opacity-75">Audio file</span>
+                        </div>
+                      }
+                    >
+                      <span class="text-lg">No Cover</span>
+                    </Show>
+                  </div>
+                }
+              >
+                <img
+                  src={state.metadata?.artwork}
+                  alt="Album artwork"
+                  class="size-full object-cover rounded-2xl"
+                />
+              </Show>
+            </div>
           </div>
 
-          {/* Hidden file input */}
-          <input
-            ref={(el) => (fileInputRef = el)}
-            type="file"
-            accept="audio/*"
-            onChange={handleFileSelect}
-            class="hidden"
-          />
-
-          {/* Main Content - Two Column Layout */}
-          <div class="relative z-10 flex min-h-screen p-8 gap-12">
-            {/* Left Column - Album Cover, Metadata, and Controls */}
-            <div class="flex flex-col gap-12 w-96 flex-shrink-0 justify-center">
-              {/* Album Cover */}
-              <div class="mb-6">
-                <div
-                  class={`aspect-square w-full bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm ${!hasFile() ? 'cursor-pointer hover:bg-white/20 transition-all duration-200' : ''}`}
-                  onClick={handleCoverClick}
-                  onKeyDown={handleCoverKeyDown}
-                  tabIndex={!hasFile() ? 0 : -1}
-                  role={!hasFile() ? 'button' : undefined}
-                  aria-label={!hasFile() ? 'Click to upload audio file' : undefined}
-                >
-                  <Show
-                    when={state.metadata?.artwork}
-                    fallback={
-                      <div class="text-center text-white/60">
-                        <Icon name="lucide:music" class="w-16 h-16 mx-auto mb-2" />
-                        <Show
-                          when={hasFile()}
-                          fallback={
-                            <div>
-                              <span class="text-lg block mb-2">Click to upload</span>
-                              <span class="text-sm opacity-75">Audio file</span>
-                            </div>
-                          }
-                        >
-                          <span class="text-lg">No Cover</span>
-                        </Show>
-                      </div>
-                    }
-                  >
-                    <img
-                      src={state.metadata?.artwork}
-                      alt="Album artwork"
-                      class="w-full h-full object-cover rounded-2xl"
-                    />
-                  </Show>
-                </div>
-              </div>
-
-              <div>
-                <MetadataDisplay />
-                <AudioControls />
-              </div>
-            </div>
-
-            {/* Right Column - Lyrics */}
-            <div class="flex-1 flex flex-col">
-              <LyricsDisplay />
-            </div>
+          <div>
+            <MetadataDisplay />
+            <AudioControls />
           </div>
         </div>
-      </Show>
-    </>
+
+        {/* Right Column - Lyrics */}
+        <div class="flex-1 flex flex-col min-w-0">
+          <LyricsDisplay />
+        </div>
+      </div>
+    </div>
   )
 }
 

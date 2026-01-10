@@ -1,7 +1,7 @@
 import { usePlayerContext } from '~/context/player'
 import { Icon } from '~/components/icon'
 import { formatTime } from '~/utils/player-utils'
-import { For, Show } from 'solid-js'
+import { Index, Show } from 'solid-js'
 
 export function AudioControls() {
   const [state, actions] = usePlayerContext()
@@ -39,15 +39,9 @@ export function AudioControls() {
   }
 
   return (
-    <div class="flex flex-col gap-4">
-      {/* Time Display */}
-      <div class="flex justify-between items-center text-sm text-white/70">
-        <span>{formatTime(state.currentTime)}</span>
-        <span>{formatTime(state.duration)}</span>
-      </div>
-
+    <>
       {/* Progress Bar */}
-      <div class="w-full mb-4 group">
+      <div class="w-full mt-4 group">
         <div
           class={`relative w-full ${state.waveform ? 'h-12' : 'h-1 group-hover:h-2'} cursor-pointer transition-all duration-300`}
           style={{
@@ -74,31 +68,34 @@ export function AudioControls() {
             }
           >
             <div
-              class="absolute inset-0 flex items-center justify-between gap-1 px-1 pointer-events-none"
+              class="absolute inset-0 flex items-center justify-between gap-1 pointer-events-none children:(flex-1 bg-white rounded-full origin-center transition-(all delay-200) duration-500 ease-out h-$hgt)"
               style={{
                 '-webkit-mask-image': `linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) var(--percent), rgba(0,0,0,0.4) var(--percent), rgba(0,0,0,0.4) 100%)`,
                 'mask-image': `linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) var(--percent), rgba(0,0,0,0.4) var(--percent), rgba(0,0,0,0.4) 100%)`,
               }}
             >
-              <For each={state.waveform}>
-                {(amp, i) => (
+              <Index each={state.waveform}>
+                {(amp) => (
                   <div
-                    class="flex-1 bg-white rounded-full origin-bottom animate-in active"
                     style={{
-                      height: `${Math.max(amp * 100, 10)}%`,
-                      animation: `enter 0.4s ease-out backwards`,
-                      'animation-delay': `${i() * 3}ms`,
+                      '--hgt': `${amp() * 100}%`,
                     }}
                   />
                 )}
-              </For>
+              </Index>
             </div>
           </Show>
         </div>
       </div>
 
+      {/* Time Display */}
+      <div class="flex justify-between items-center text-sm text-white/70 py-2">
+        <span>{formatTime(state.currentTime)}</span>
+        <span>{formatTime(state.duration)}</span>
+      </div>
+
       {/* Control Buttons */}
-      <div class="flex items-center justify-center gap-8 children:bg-transparent">
+      <div class="flex mt-8 items-center justify-center gap-8 children:bg-transparent">
         {/* Previous Button */}
         <button
           onClick={handlePrevious}
@@ -136,6 +133,6 @@ export function AudioControls() {
           <Icon name="lucide:skip-forward" class="w-6 h-6" />
         </button>
       </div>
-    </div>
+    </>
   )
 }

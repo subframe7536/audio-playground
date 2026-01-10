@@ -1,5 +1,6 @@
 import type { Accessor, JSX } from 'solid-js'
 import type { LrcObj } from '~/utils/parse-lyric'
+import type { AudioQualityType } from 'node-taglib-sharp-extend'
 
 export interface AudioMetadata {
   title: string
@@ -22,6 +23,7 @@ export interface AudioMetadata {
   diskTotal?: number
   albumArtists?: string[]
   composers?: string[]
+  quality: AudioQualityType
 }
 
 export interface PlayerState {

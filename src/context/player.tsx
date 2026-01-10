@@ -13,7 +13,6 @@ import type {
   PlayerActions,
   PlayerContextValue,
   PlayerProviderProps,
-  AudioMetadata,
 } from '~/types/player'
 import { parseMetadata } from '~/utils/player-utils'
 import { parseLyric } from '~/utils/parse-lyric'
@@ -38,7 +37,7 @@ const initialState: PlayerState = {
   isAudioReady: false,
 
   // Waveform data
-  waveform: null,
+  waveform: new Array(48).fill(0.1),
 
   // Loading state
   isLoading: false,
@@ -118,51 +117,37 @@ export function PlayerProvider(props: PlayerProviderProps) {
 
       cleanup?.()
 
-      try {
-        let meta = await parseMetadata(file)
+      let meta = await parseMetadata(file)
 
-        setState(
-          produce((s) => {
-            if (meta.lyrics) {
-              s.lyrics = parseLyric(meta.lyrics)
-            }
-            s.metadata = meta
-            s.duration = meta.duration
-          }),
-        )
+      setState(
+        produce((s) => {
+          if (meta.lyrics) {
+            s.lyrics = parseLyric(meta.lyrics, {
+              ignoreShortEmptyLines: true,
+              minEmptyLineDuration: 3,
+            })
+          }
+          s.metadata = meta
+          s.duration = meta.duration
+        }),
+      )
 
-        // Load audio - handle File and URL differently
-        const buffer = await file.arrayBuffer()
-        createWaveformGenerator(buffer)
-          .then((calc) => calc(48))
-          .then((waveform) => setState('waveform', waveform))
+      // Load audio - handle File and URL differently
+      const buffer = await file.arrayBuffer()
+      createWaveformGenerator(buffer)
+        .then((calc) => calc(48))
+        .then((waveform) => setState('waveform', waveform))
 
-        const [track, cleanupFn] = await parseTrack({ src: file })
+      const [track, cleanupFn] = await parseTrack({ src: file })
 
-        const audioReady = await audio.load(track)
-        cleanup = cleanupFn
+      const audioReady = await audio.load(track)
+      cleanup = cleanupFn
 
-        setState('isAudioReady', audioReady)
+      setState('isAudioReady', audioReady)
 
-        return {
-          metadata: meta,
-          audioReady,
-        }
-      } catch (error) {
-        console.warn('Failed to load audio/metadata:', error)
-
-        // Return fallback metadata even if audio loading fails
-        const fallbackMetadata: AudioMetadata = {
-          title: file ? file.name.replace(/\.[^/.]+$/, '') : 'Demo Audio',
-          artist: 'Unknown Artist',
-          album: 'Unknown Album',
-          duration: 0,
-        }
-
-        return {
-          metadata: fallbackMetadata,
-          audioReady: false,
-        }
+      return {
+        metadata: meta,
+        audioReady,
       }
     },
   )

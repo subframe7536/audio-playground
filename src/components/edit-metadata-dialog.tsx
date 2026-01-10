@@ -1,4 +1,4 @@
-import { createSignal, Show, onMount, For } from 'solid-js'
+import { createSignal, Show, For, createEffect, on } from 'solid-js'
 import { Icon } from './icon'
 import { FormField } from './form-field'
 import { Button } from './button'
@@ -75,23 +75,30 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
   ]
 
   // Initialize form values when metadata changes
-  onMount(() => {
-    if (props.metadata) {
-      setTitle(props.metadata.title || '')
-      setArtist(props.metadata.artist || '')
-      setAlbum(props.metadata.album || '')
-      setYear(props.metadata.year || '')
-      setGenres(props.metadata.genres?.join(', ') || '')
-      setTrack(props.metadata.track || '')
-      setTrackTotal(props.metadata.trackTotal || '')
-      setDisk(props.metadata.disk || '')
-      setDiskTotal(props.metadata.diskTotal || '')
-      setAlbumArtists(props.metadata.albumArtists?.join(', ') || '')
-      setComposers(props.metadata.composers?.join(', ') || '')
-      setComment('')
-      setLyrics(props.metadata.lyrics || '')
-    }
-  })
+  createEffect(
+    on(
+      () => props.metadata,
+      (meta) => {
+        if (!meta) {
+          return
+        }
+        setTitle(meta.title || '')
+        setArtist(meta.artist || '')
+        setAlbum(meta.album || '')
+        setYear(meta.year || '')
+        setGenres(meta.genres?.join(', ') || '')
+        setTrack(meta.track || '')
+        setTrackTotal(meta.trackTotal || '')
+        setDisk(meta.disk || '')
+        setDiskTotal(meta.diskTotal || '')
+        setAlbumArtists(meta.albumArtists?.join(', ') || '')
+        setComposers(meta.composers?.join(', ') || '')
+        setComment('')
+        setLyrics(meta.lyrics || '')
+      },
+      { defer: true },
+    ),
+  )
 
   const handleArtworkChange = (e: Event) => {
     const input = e.target as HTMLInputElement

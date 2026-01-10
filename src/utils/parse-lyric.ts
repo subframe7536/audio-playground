@@ -5,6 +5,15 @@ export interface LrcObj {
   transContent: string
 }
 
+export interface ParseLyricOptions {
+  ignoreShortEmptyLines?: boolean
+  /**
+   * In second
+   * @default 1
+   */
+  minEmptyLineDuration?: number
+}
+
 // 1. Static Regex to avoid recompilation
 // Matches <mm:ss.xx> or [mm:ss.xx] anywhere (for cleanup)
 const REG_TIME_TAG = /^\[(\d{1,2}):(\d{1,2})\.(\d{1,3})\]/
@@ -80,11 +89,14 @@ function parseRaw(lines: string[]): RawLrc[] {
   return ret.sort((a, b) => a.time - b.time)
 }
 
-export function parseLyric(sourceLrc: string): LrcObj[] {
+export function parseLyric(sourceLrc: string, options?: ParseLyricOptions): LrcObj[] {
   // Handle empty input immediately
   if (!sourceLrc) {
     return []
   }
+
+  const { ignoreShortEmptyLines = false, minEmptyLineDuration = 1 } = options || {}
+
   const lrcArr = sourceLrc.split(/[\r\n]+/)
   const parsedRaw = parseRaw(lrcArr)
   const normalizedLrc: LrcObj[] = []
@@ -95,12 +107,41 @@ export function parseLyric(sourceLrc: string): LrcObj[] {
   for (let i = 0; i < len; i++) {
     const current = parsedRaw[i]
 
-    // Don't skip empty lines - include them with empty content
-
     // Check next item for translation (same time check)
     // Using a small epsilon for float comparison safety, though usually exact string match implies exact time
     const next = parsedRaw[i + 1]
     const isDoubleLine = next && next.time === current.time && next.content
+
+    // If current line is empty, merge consecutive empty lines
+    if (!current.content) {
+      // Find the next non-empty line to calculate duration
+      let nextNonEmptyIndex = i + 1
+      while (nextNonEmptyIndex < len && !parsedRaw[nextNonEmptyIndex].content) {
+        nextNonEmptyIndex++
+      }
+
+      const nextTime = nextNonEmptyIndex < len ? parsedRaw[nextNonEmptyIndex].time : Number.POSITIVE_INFINITY
+      const duration = nextTime - current.time
+
+      // Skip short empty lines if option is enabled
+      if (ignoreShortEmptyLines && duration < minEmptyLineDuration) {
+        // Skip all consecutive empty lines
+        i = nextNonEmptyIndex - 1
+        continue
+      }
+
+      // Add the empty line
+      normalizedLrc.push({
+        index: index++,
+        time: current.time,
+        rawContent: current.content,
+        transContent: '',
+      })
+
+      // Skip all consecutive empty lines (merge them into one)
+      i = nextNonEmptyIndex - 1
+      continue
+    }
 
     normalizedLrc.push({
       index: index++,

@@ -13,7 +13,7 @@ export async function parseMetadata(file: File): Promise<AudioMetadata> {
     const buffer = await file.arrayBuffer()
     const uint8Buffer = new Uint8Array(buffer)
     const tagFile = createFileFromBuffer(file.name, uint8Buffer)
-    const { tag, property, pictures } = parseTagMetadata(tagFile)
+    const { tag, property, quality, pictures } = parseTagMetadata(tagFile)
 
     let artwork: string | undefined
     if (pictures && pictures.length > 0) {
@@ -28,6 +28,7 @@ export async function parseMetadata(file: File): Promise<AudioMetadata> {
       artist: tag.artists?.join('; ') || 'Unknown Artist',
       album: tag.album || 'Unknown Album',
       artwork,
+      quality,
     }
   } catch (error) {
     console.warn('Failed to parse metadata:', error)
@@ -36,6 +37,7 @@ export async function parseMetadata(file: File): Promise<AudioMetadata> {
       artist: 'Unknown Artist',
       album: 'Unknown Album',
       duration: 0,
+      quality: 'HQ',
     }
   }
 }

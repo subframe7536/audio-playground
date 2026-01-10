@@ -10,7 +10,6 @@ interface LyricLineProps {
   isScrolling: boolean
   ref?: (el: HTMLDivElement) => void
   onClick?: () => void
-  onMouseEnter?: () => void
 }
 
 function LyricLine(props: LyricLineProps) {
@@ -21,30 +20,29 @@ function LyricLine(props: LyricLineProps) {
       return 0
     }
     let dis = distance()
-    if (dis < -3) {
-      dis = -4 - dis
+    if (dis < -2) {
+      dis = -3 - dis
     } else if (dis > 1) {
       dis -= 1
     } else {
       dis = 0
     }
-    return Math.min(dis * 0.5, 4)
+    return Math.min(dis * 0.5, 4) * 2
   }
 
   return (
     <div
       ref={props.ref}
       onClick={props.onClick}
-      onMouseEnter={props.onMouseEnter}
       data-active={distance() ? undefined : ''}
       data-past={distance() > 0 ? '' : undefined}
-      class="lyric-line group relative py-1 text-(center gray-500 2xl) opacity-60 transition-all ease-out duration-300 cursor-pointer blur-$blr hover:(opacity-90 blur-none) data-[active]:(text-gray-200 opacity-100) data-[past]:(text-gray-400 opacity-70)"
+      class="lyric-line parent relative py-1 text-(center gray-500 2xl) opacity-60 transition-all ease-out duration-300 cursor-pointer blur-$blr hover:opacity-90 group-hover:blur-none data-[active]:(text-gray-200 opacity-100) data-[past]:(text-gray-400 opacity-70)"
       style={{ '--blr': `${blurAmount()}px` }}
     >
-      <div class="w-fit max-w-80% mx-auto rounded-xl p-(x-4 y-3) group-hover:bg-gray/10">
+      <div class="w-fit max-w-80% mx-auto rounded-xl p-(x-4 y-3) parent-hover:bg-gray/10">
         <Show
           when={props.lyric.rawContent}
-          fallback={<div class="group-data-[active]:animate-pulse font-700">...</div>}
+          fallback={<div class="parent-data-[active]:animate-pulse font-700">...</div>}
         >
           <div class="lyric-original mb-1 font-700">{props.lyric.rawContent}</div>
           <Show when={props.lyric.transContent}>
@@ -57,7 +55,7 @@ function LyricLine(props: LyricLineProps) {
 
       {/* Pure CSS hover time display - only show for lyrics with valid time */}
       <Show when={props.lyric.time >= 0}>
-        <div class="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none leading-none">
+        <div class="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded backdrop-blur-sm opacity-0 parent-hover:opacity-100 transition-opacity duration-100 pointer-events-none leading-none">
           {formatTime(props.lyric.time)}
         </div>
       </Show>
@@ -205,7 +203,7 @@ export function LyricsDisplay() {
           </div>
         }
       >
-        <div class="lyrics-container pt-30vh pb-70vh px-4">
+        <div class="lyrics-container group pt-30vh pb-70vh px-4">
           <For each={state.lyrics}>
             {(lyric, index) => {
               const currentIndex = index()
@@ -216,7 +214,6 @@ export function LyricsDisplay() {
                   activeIndex={state.activeLyricIndex}
                   isScrolling={!isAutoScrollEnabled()}
                   onClick={() => handleLyricClick(lyric)}
-                  onMouseEnter={() => !isAutoScrollEnabled() && scheduleResume()}
                   ref={(el) => {
                     lineRefs[currentIndex] = el
                   }}
