@@ -139,7 +139,7 @@ export function AudioControls() {
         <span>{formatTime(state.currentTime)}</span>
         <Show when={buildAudioInfo()}>
           {(audioInfo) => (
-            <span class="text-(xs white/30) absolute left-50% top-55% translate--50%">
+            <span class="text-(xs white/30) absolute left-50% top-55% translate--50% whitespace-nowrap">
               {audioInfo()}
             </span>
           )}
@@ -226,9 +226,7 @@ export function AudioControls() {
             <div class="absolute top-0 left-0 h-full bg-white rounded-full transition-all duration-300 w-$volume-percent" />
           </div>
         </div>
-        <span class="text-xs text-white/50 w-8 text-right tabular-nums">
-          {Math.round(state.volume * 100)}
-        </span>
+        <span class="text-xs text-white/50 w-8 text-right">{Math.round(state.volume * 100)}</span>
       </div>
     </>
   )

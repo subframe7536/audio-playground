@@ -44,7 +44,9 @@ function LyricLine(props: LyricLineProps) {
           when={props.lyric.rawContent}
           fallback={<div class="group-data-[active]:animate-pulse font-700">...</div>}
         >
-          <div class="lyric-original mb-1 font-700">{props.lyric.rawContent}</div>
+          <div class="lyric-original mb-1 font-700 whitespace-pre-line leading-relaxed">
+            {props.lyric.rawContent}
+          </div>
           <Show when={props.lyric.transContent}>
             <div class="lyric-translation font-500 opacity-50 text-lg">
               {props.lyric.transContent}
@@ -190,7 +192,9 @@ export function LyricsDisplay() {
                   {(lyric) => (
                     <div class="mb-2 text-gray-400">
                       <Show when={lyric.rawContent}>
-                        <div class="mb-1">{lyric.rawContent}</div>
+                        <div class="mb-1 whitespace-pre-line leading-relaxed">
+                          {lyric.rawContent}
+                        </div>
                       </Show>
                       <Show when={lyric.transContent}>
                         <div class="text-sm opacity-80">{lyric.transContent}</div>

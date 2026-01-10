@@ -85,7 +85,7 @@ function PlayerInterface() {
   }
 
   return (
-    <div class="relative h-screen max-w-300 mx-a">
+    <div class="relative h-screen max-w-300 mx-a select-none">
       {/* Background Layer */}
       <BackgroundLayer opacity={0.7} blurIntensity={32} />
 

@@ -99,18 +99,49 @@ export function parseLyric(sourceLrc: string, options?: ParseLyricOptions): LrcO
 
   const lrcArr = sourceLrc.split(/[\r\n]+/)
   const parsedRaw = parseRaw(lrcArr)
+
+  let hasLeadingMetadata = false
+  let leadingMetadataCount = 0
+  if (parsedRaw.length >= 3) {
+    const firstTime = parsedRaw[0].time
+    let sameTimeCount = 0
+    for (let i = 0; i < parsedRaw.length; i++) {
+      if (parsedRaw[i].time === firstTime) {
+        sameTimeCount++
+      } else {
+        break
+      }
+    }
+    if (sameTimeCount >= 3) {
+      hasLeadingMetadata = true
+      leadingMetadataCount = sameTimeCount
+    }
+  }
+
   const normalizedLrc: LrcObj[] = []
 
   let index = 0
   const len = parsedRaw.length
 
-  for (let i = 0; i < len; i++) {
+  if (hasLeadingMetadata && leadingMetadataCount > 0) {
+    const metadataContents = parsedRaw.slice(0, leadingMetadataCount).map(item => item.content).join('\n')
+    normalizedLrc.push({
+      index: index++,
+      time: parsedRaw[0].time,
+      rawContent: metadataContents,
+      transContent: '',
+    })
+  }
+
+  for (let i = hasLeadingMetadata ? leadingMetadataCount : 0; i < len; i++) {
     const current = parsedRaw[i]
 
     // Check next item for translation (same time check)
     // Using a small epsilon for float comparison safety, though usually exact string match implies exact time
     const next = parsedRaw[i + 1]
     const isDoubleLine = next && next.time === current.time && next.content
+
+    const shouldPair = isDoubleLine
 
     // If current line is empty, merge consecutive empty lines
     if (!current.content) {
@@ -147,11 +178,11 @@ export function parseLyric(sourceLrc: string, options?: ParseLyricOptions): LrcO
       index: index++,
       time: current.time,
       rawContent: current.content,
-      transContent: isDoubleLine ? next.content : '',
+      transContent: shouldPair ? next.content : '',
     })
 
     // Skip the next line if it was used as translation
-    if (isDoubleLine) {
+    if (shouldPair) {
       i++
     }
   }
