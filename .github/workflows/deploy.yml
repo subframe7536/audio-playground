@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '**/*.ts'
+      - '**/*.tsx'
   workflow_dispatch:
 
 permissions:

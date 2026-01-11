@@ -152,8 +152,10 @@ function PlayerInterface() {
                     when={hasFile()}
                     fallback={
                       <div>
-                        <span class="text-lg block mb-2">Click to upload</span>
-                        <span class="text-sm opacity-75">Audio file</span>
+                        <span class="text-lg block mb-4">Click to upload audio file</span>
+                        <span class="opacity-60">Or click play button on the top right</span>
+                        <br />
+                        <span class="opacity-60">to load demo file</span>
                       </div>
                     }
                   >
