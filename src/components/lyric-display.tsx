@@ -207,7 +207,7 @@ export function LyricsDisplay() {
           </div>
         }
       >
-        <div class="lyrics-container group pt-30vh pb-70vh px-4">
+        <div class="lyrics-container group pt-40vh pb-60vh px-4">
           <For each={state.lyrics}>
             {(lyric, index) => {
               const currentIndex = index()

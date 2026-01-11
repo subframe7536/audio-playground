@@ -244,13 +244,10 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
   return (
     <Show when={props.isOpen}>
       {/* Backdrop */}
-      <div
-        class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-        onClick={props.onClose}
-      >
+      <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm" onClick={props.onClose}>
         {/* Dialog */}
         <div
-          class="fixed left-50% top-50% z-50 translate--50% max-w-2xl max-h-90vh"
+          class="fixed left-50% top-50% z-50 translate--50% w-80% max-w-200 max-h-90vh"
           onClick={(e) => e.stopPropagation()}
         >
           <div class="overflow-hidden rounded-lg border border-gray-800 bg-gray-900 shadow-lg">

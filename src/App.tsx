@@ -175,7 +175,7 @@ function PlayerInterface() {
         </div>
 
         {/* Right Column - Lyrics */}
-        <div class="w-120 min-w-80 flex flex-col">
+        <div class="w-160 min-w-80 flex flex-col">
           <LyricsDisplay />
         </div>
       </div>
