@@ -1,12 +1,20 @@
 import { usePlayerContext } from '~/context/player'
 import { Icon } from '~/components/icon'
 import { formatTime } from '~/utils/player-utils'
-import { createMemo, Index, Show } from 'solid-js'
+import { createMemo, Index, Show, createSignal } from 'solid-js'
 import { IconButton } from './icon-button'
+import { clamp } from 'audio0'
 
 export function AudioControls() {
   const [state, actions] = usePlayerContext()
   let lastVolume = 0
+  // oxlint-disable-next-line no-unassigned-vars
+  let seekBarRef: HTMLDivElement | undefined
+  // oxlint-disable-next-line no-unassigned-vars
+  let volumeBarRef: HTMLDivElement | undefined
+
+  // Drag state for debouncing
+  const [previewTime, setPreviewTime] = createSignal(0)
 
   const handlePlayPause = async () => {
     if (state.isPlaying) {
@@ -31,14 +39,76 @@ export function AudioControls() {
     console.log('Next track')
   }
 
-  const handleSeek = (event: MouseEvent) => {
-    const progressBar = event.currentTarget as HTMLElement
-    const rect = progressBar.getBoundingClientRect()
-    const clickX = event.clientX - rect.left
-    const percentage = clickX / rect.width
-    const seekTime = percentage * state.duration
-    actions.seek(seekTime)
+  // Generic handler for calculating percentage from pointer position
+  const calculatePercentage = (element: HTMLElement, clientX: number) => {
+    const rect = element.getBoundingClientRect()
+    const x = clientX - rect.left
+    return clamp(0, x / rect.width, 1)
   }
+
+  // Seek slider handlers with debounce
+  const handleSeekPointerDown = (event: PointerEvent) => {
+    const target = event.currentTarget as HTMLElement
+    target.setPointerCapture(event.pointerId)
+    if (seekBarRef) {
+      const percentage = calculatePercentage(seekBarRef, event.clientX)
+      setPreviewTime(percentage * state.duration)
+    }
+  }
+
+  const handleSeekPointerMove = (event: PointerEvent) => {
+    const target = event.currentTarget as HTMLElement
+    if (!target.hasPointerCapture(event.pointerId) || !seekBarRef) {
+      return
+    }
+
+    event.preventDefault()
+    const percentage = calculatePercentage(seekBarRef, event.clientX)
+    setPreviewTime(percentage * state.duration)
+  }
+
+  const handleSeekPointerUp = (event: PointerEvent) => {
+    const target = event.currentTarget as HTMLElement
+    if (!target.hasPointerCapture(event.pointerId) || !seekBarRef) {
+      return
+    }
+    actions.seek(previewTime())
+  }
+
+  // Volume slider handlers with transition disable
+  const handleVolumePointerDown = (event: PointerEvent) => {
+    const target = event.currentTarget as HTMLElement
+    target.setPointerCapture(event.pointerId)
+
+    if (volumeBarRef) {
+      const percentage = calculatePercentage(volumeBarRef, event.clientX)
+      actions.setVolume(percentage)
+    }
+  }
+
+  const handleVolumePointerMove = (event: PointerEvent) => {
+    const target = event.currentTarget as HTMLElement
+    if (!target.hasPointerCapture(event.pointerId) || !volumeBarRef) {
+      return
+    }
+
+    event.preventDefault()
+    const percentage = calculatePercentage(volumeBarRef, event.clientX)
+    actions.setVolume(percentage)
+  }
+
+  const handleVolumePointerUp = () => {}
+
+  // Calculate display time (preview during drag, actual time otherwise)
+  const displayTime = createMemo(() => previewTime() ?? state.currentTime)
+
+  // Calculate display percentage for progress bar
+  const displayPercent = createMemo(() => {
+    if (state.duration === 0) {
+      return 0
+    }
+    return (displayTime() / state.duration) * 100
+  })
 
   const volumeIcon = createMemo(() => {
     if (state.volume === 0) {
@@ -46,14 +116,6 @@ export function AudioControls() {
     }
     return state.volume < 0.5 ? 'lucide:volume-1' : 'lucide:volume-2'
   })
-
-  const handleVolumeChange = (event: MouseEvent) => {
-    const volumeBar = event.currentTarget as HTMLElement
-    const rect = volumeBar.getBoundingClientRect()
-    const clickX = event.clientX - rect.left
-    const percentage = Math.max(0, Math.min(1, clickX / rect.width))
-    actions.setVolume(percentage)
-  }
 
   const buildAudioInfo = createMemo(() => {
     const parts = []
@@ -89,16 +151,14 @@ export function AudioControls() {
       {/* Progress Bar */}
       <div class="w-full mt-8 group">
         <div
-          class={`relative w-full ${state.waveform ? 'h-12' : 'h-1 group-hover:h-2'} cursor-pointer transition-all duration-300`}
+          ref={seekBarRef}
+          class={`relative w-full ${state.waveform ? 'h-12' : 'h-1 group-hover:h-2'} cursor-pointer transition-all duration-300 touch-none`}
           style={{
-            '--percent': `${state.duration > 0 ? (state.currentTime / state.duration) * 100 : 0}%`,
+            '--percent': `${displayPercent()}%`,
           }}
-          onClick={handleSeek}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              handleSeek(e as any)
-            }
-          }}
+          onPointerDown={handleSeekPointerDown}
+          onPointerMove={handleSeekPointerMove}
+          onPointerUp={handleSeekPointerUp}
           role="slider"
           tabIndex={0}
           aria-label="Seek progress"
@@ -107,14 +167,11 @@ export function AudioControls() {
           <Show
             when={state.waveform}
             fallback={
-              <div
-                class="absolute top-0 left-0 h-full bg-white rounded-full transition-width duration-100"
-                style={{ width: 'var(--percent)' }}
-              />
+              <div class={`absolute top-0 left-0 h-full bg-white rounded-full w-$percent`} />
             }
           >
             <div
-              class="absolute inset-0 flex items-center justify-between gap-1 pointer-events-none children:(flex-1 bg-white rounded-full origin-center transition-(all delay-200) duration-500 ease-out h-$hgt)"
+              class="absolute inset-0 flex items-center justify-between gap-1 pointer-events-none children:(flex-1 bg-white rounded-full origin-center transition-(all delay-100) duration-500 ease-out h-$hgt)"
               style={{
                 '-webkit-mask-image': `linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) var(--percent), rgba(0,0,0,0.4) var(--percent), rgba(0,0,0,0.4) 100%)`,
                 'mask-image': `linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) var(--percent), rgba(0,0,0,0.4) var(--percent), rgba(0,0,0,0.4) 100%)`,
@@ -136,7 +193,7 @@ export function AudioControls() {
 
       {/* Time Display */}
       <div class="flex justify-between text-sm text-white/70 py-2 relative">
-        <span>{formatTime(state.currentTime)}</span>
+        <span>{formatTime(displayTime())}</span>
         <Show when={buildAudioInfo()}>
           {(audioInfo) => (
             <span class="text-(xs white/30) absolute left-50% top-55% translate--50% whitespace-nowrap">
@@ -204,11 +261,14 @@ export function AudioControls() {
         />
         <div class="flex-1 group py-2">
           <div
-            class="relative w-full h-1 bg-white/20 rounded-full cursor-pointer group-hover:h-2 transition-height duration-200"
+            ref={volumeBarRef}
+            class="relative w-full h-1 bg-white/20 rounded-full cursor-pointer group-hover:h-2 transition-height duration-200 touch-none"
             style={{
               '--volume-percent': `${state.volume * 100}%`,
             }}
-            onClick={handleVolumeChange}
+            onPointerDown={handleVolumePointerDown}
+            onPointerMove={handleVolumePointerMove}
+            onPointerUp={handleVolumePointerUp}
             onKeyDown={(e) => {
               if (e.key === 'ArrowLeft') {
                 actions.setVolume(Math.max(0, state.volume - 0.05))
@@ -223,7 +283,7 @@ export function AudioControls() {
             aria-valuemax={100}
             aria-valuenow={Math.round(state.volume * 100)}
           >
-            <div class="absolute top-0 left-0 h-full bg-white rounded-full transition-all duration-300 w-$volume-percent" />
+            <div class={`absolute top-0 left-0 h-full bg-white rounded-full w-$volume-percent`} />
           </div>
         </div>
         <span class="text-xs text-white/50 w-8 text-right">{Math.round(state.volume * 100)}</span>

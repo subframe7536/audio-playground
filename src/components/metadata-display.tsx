@@ -28,7 +28,9 @@ export function MetadataDisplay() {
     }
 
     if (state.metadata?.genres && state.metadata.genres.length > 0) {
-      parts.push(...state.metadata.genres)
+      parts.push(
+        ...state.metadata.genres.map((s) => s.split(/;/g).map((s) => s.trim())).filter(Boolean),
+      )
     }
 
     return parts

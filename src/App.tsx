@@ -123,63 +123,59 @@ function PlayerInterface() {
       />
 
       {/* Main Content - Two Column Layout */}
-      <div class="relative z-10 flex h-screen p-8 gap-6 md:gap-12 items-center justify-center">
+      <div class="relative z-10 flex h-screen p-8 md:gap-8 lg:gap-24 items-center justify-center">
         {/* Left Column - Album Cover, Metadata, and Controls */}
-        <div class="flex-shrink-0 w-96 max-w-96">
+        <div class="w-96 min-w-80">
           {/* Album Cover */}
-          <div class="mb-6">
-            <div
-              class={`aspect-square w-full bg-white/10 rounded-2xl flex items-center justify-center relative ${!hasFile() ? 'cursor-pointer hover:bg-white/20 transition-all duration-200' : ''}`}
-              onClick={handleCoverClick}
-              onKeyDown={handleCoverKeyDown}
-              tabIndex={!hasFile() ? 0 : -1}
-              role={!hasFile() ? 'button' : undefined}
-              aria-label={!hasFile() ? 'Click to upload audio file' : undefined}
-            >
-              {/* Loading Spinner Overlay */}
-              <Show when={state.isLoading}>
-                <div class="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center z-10">
-                  <Icon name="lucide:loader-2" class="w-12 h-12 animate-spin text-white mb-4" />
-                  <p class="text-gray-300">Loading...</p>
+          <div
+            class={`aspect-square w-full mb-6 bg-white/10 rounded-2xl flex items-center justify-center relative ${!hasFile() ? 'cursor-pointer hover:bg-white/20 transition-all duration-200' : ''}`}
+            onClick={handleCoverClick}
+            onKeyDown={handleCoverKeyDown}
+            tabIndex={!hasFile() ? 0 : -1}
+            role={!hasFile() ? 'button' : undefined}
+            aria-label={!hasFile() ? 'Click to upload audio file' : undefined}
+          >
+            {/* Loading Spinner Overlay */}
+            <Show when={state.isLoading}>
+              <div class="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center z-10">
+                <Icon name="lucide:loader-2" class="w-12 h-12 animate-spin text-white mb-4" />
+                <p class="text-gray-300">Loading...</p>
+              </div>
+            </Show>
+
+            <Show
+              when={state.metadata?.artwork}
+              fallback={
+                <div class="text-center text-white/60">
+                  <Icon name="lucide:music" class="w-16 h-16 mx-auto mb-2" />
+                  <Show
+                    when={hasFile()}
+                    fallback={
+                      <div>
+                        <span class="text-lg block mb-2">Click to upload</span>
+                        <span class="text-sm opacity-75">Audio file</span>
+                      </div>
+                    }
+                  >
+                    <span class="text-lg">No Cover</span>
+                  </Show>
                 </div>
-              </Show>
-
-              <Show
-                when={state.metadata?.artwork}
-                fallback={
-                  <div class="text-center text-white/60">
-                    <Icon name="lucide:music" class="w-16 h-16 mx-auto mb-2" />
-                    <Show
-                      when={hasFile()}
-                      fallback={
-                        <div>
-                          <span class="text-lg block mb-2">Click to upload</span>
-                          <span class="text-sm opacity-75">Audio file</span>
-                        </div>
-                      }
-                    >
-                      <span class="text-lg">No Cover</span>
-                    </Show>
-                  </div>
-                }
-              >
-                <img
-                  src={state.metadata?.artwork}
-                  alt="Album artwork"
-                  class="size-full object-cover rounded-2xl"
-                />
-              </Show>
-            </div>
+              }
+            >
+              <img
+                src={state.metadata?.artwork}
+                alt="Album artwork"
+                class="size-full object-cover rounded-2xl"
+              />
+            </Show>
           </div>
 
-          <div>
-            <MetadataDisplay />
-            <AudioControls />
-          </div>
+          <MetadataDisplay />
+          <AudioControls />
         </div>
 
         {/* Right Column - Lyrics */}
-        <div class="flex-1 flex flex-col min-w-0">
+        <div class="w-120 min-w-80 flex flex-col">
           <LyricsDisplay />
         </div>
       </div>
