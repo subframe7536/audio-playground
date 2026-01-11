@@ -29,6 +29,7 @@ function LyricLine(props: LyricLineProps) {
     }
     return Math.min(dis * 0.5, 4) * 2
   }
+  console.log(props.lyric.rawContent)
 
   return (
     <div
@@ -41,7 +42,7 @@ function LyricLine(props: LyricLineProps) {
     >
       <div class="w-fit max-w-80% mx-auto rounded-xl p-(x-4 y-3) parent-hover:bg-gray/10">
         <Show
-          when={props.lyric.rawContent}
+          when={props.lyric.rawContent && props.lyric.rawContent !== '...'}
           fallback={<div class="group-data-[active]:animate-pulse font-700">...</div>}
         >
           <div class="lyric-original mb-1 font-700 whitespace-pre-line leading-relaxed">

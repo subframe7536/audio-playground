@@ -21,15 +21,36 @@ export function MetadataDisplay() {
   })
 
   const buildMetadataLine = createMemo(() => {
-    const parts = []
+    const parts: { content: string; type: string }[] = []
 
     if (state.metadata?.year) {
-      parts.push(state.metadata.year.toString())
+      parts.push({
+        content: state.metadata.year.toString(),
+        type: 'year',
+      })
     }
 
     if (state.metadata?.genres && state.metadata.genres.length > 0) {
       parts.push(
-        ...state.metadata.genres.map((s) => s.split(/;/g).map((s) => s.trim())).filter(Boolean),
+        ...state.metadata.genres
+          .flatMap((s) => s.split(/\s?;\s?/g))
+          .filter(Boolean)
+          .map((g) => ({
+            content: g,
+            type: 'genre',
+          })),
+      )
+    }
+
+    if (state.metadata?.codecs && state.metadata.codecs.length > 0) {
+      parts.push(
+        ...state.metadata.codecs
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .map((c) => ({
+            content: c,
+            type: 'codec',
+          })),
       )
     }
 
@@ -66,15 +87,25 @@ export function MetadataDisplay() {
 
         {/* Metadata line */}
         <Show when={buildMetadataLine().length > 0}>
-          <div class="flex gap-2">
-            <Show when={state.metadata}>
-              <span class={qualityBg() + ' p-(x-2 y-1) rounded-md text-xs'}>
-                {state.metadata?.quality}
-              </span>
+          <div class="flex gap-2 flex-wrap">
+            <Show when={state.metadata?.quality}>
+              {(quality) => (
+                <span
+                  class={qualityBg() + ' p-(x-2 y-1) rounded-md text-xs'}
+                  title={`quality:${quality()}`}
+                >
+                  {quality()}
+                </span>
+              )}
             </Show>
             <For each={buildMetadataLine()}>
               {(item) => (
-                <span class="bg-white/20 text-gray-200 p-(x-2 y-1) rounded-md text-xs">{item}</span>
+                <span
+                  class="bg-white/20 text-gray-200 p-(x-2 y-1) rounded-md text-xs"
+                  title={`${item.type}:${item.content}`}
+                >
+                  {item.content}
+                </span>
               )}
             </For>
           </div>

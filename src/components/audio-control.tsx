@@ -14,7 +14,7 @@ export function AudioControls() {
   let volumeBarRef: HTMLDivElement | undefined
 
   // Drag state for debouncing
-  const [previewTime, setPreviewTime] = createSignal(0)
+  const [previewTime, setPreviewTime] = createSignal<number | null>(null)
 
   const handlePlayPause = async () => {
     if (state.isPlaying) {
@@ -72,7 +72,13 @@ export function AudioControls() {
     if (!target.hasPointerCapture(event.pointerId) || !seekBarRef) {
       return
     }
-    actions.seek(previewTime())
+    const time = previewTime()
+    if (time) {
+      actions.seek(time)
+      setTimeout(() => {
+        setPreviewTime(null)
+      }, 100)
+    }
   }
 
   // Volume slider handlers with transition disable

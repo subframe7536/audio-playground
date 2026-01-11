@@ -14,6 +14,7 @@ export interface AudioMetadata {
   bitDepth?: number // bits per sample
   sampleRate?: number // Hz
   channels?: number
+  codecs?: string[]
   // Additional tag fields
   genres?: string[]
   year?: number

@@ -124,7 +124,10 @@ export function parseLyric(sourceLrc: string, options?: ParseLyricOptions): LrcO
   const len = parsedRaw.length
 
   if (hasLeadingMetadata && leadingMetadataCount > 0) {
-    const metadataContents = parsedRaw.slice(0, leadingMetadataCount).map(item => item.content).join('\n')
+    const metadataContents = parsedRaw
+      .slice(0, leadingMetadataCount)
+      .map((item) => item.content)
+      .join('\n')
     normalizedLrc.push({
       index: index++,
       time: parsedRaw[0].time,
@@ -151,7 +154,8 @@ export function parseLyric(sourceLrc: string, options?: ParseLyricOptions): LrcO
         nextNonEmptyIndex++
       }
 
-      const nextTime = nextNonEmptyIndex < len ? parsedRaw[nextNonEmptyIndex].time : Number.POSITIVE_INFINITY
+      const nextTime =
+        nextNonEmptyIndex < len ? parsedRaw[nextNonEmptyIndex].time : Number.POSITIVE_INFINITY
       const duration = nextTime - current.time
 
       // Skip short empty lines if option is enabled
@@ -188,29 +192,29 @@ export function parseLyric(sourceLrc: string, options?: ParseLyricOptions): LrcO
   }
 
   // Fallback: If no valid lyrics found, return the raw lines with -1 time
-  if (normalizedLrc.length === 0) {
-    // Check if it's a single line text or multiple
-    if (lrcArr.length === 1 && lrcArr[0].trim()) {
-      return [
-        {
-          index: 0,
-          time: 0,
-          rawContent: lrcArr[0].trim(),
-          transContent: '',
-        },
-      ]
-    }
-
-    // Map all raw lines to untimed objects
-    return lrcArr
-      .filter((line) => line.trim())
-      .map((line) => ({
-        index: -1,
-        time: -1,
-        rawContent: line.trim(),
-        transContent: '',
-      }))
+  if (normalizedLrc.length > 0) {
+    return normalizedLrc
   }
 
-  return normalizedLrc
+  // Check if it's a single line text or multiple
+  if (lrcArr.length === 1 && lrcArr[0].trim()) {
+    return [
+      {
+        index: 0,
+        time: 0,
+        rawContent: lrcArr[0].trim(),
+        transContent: '',
+      },
+    ]
+  }
+
+  // Map all raw lines to untimed objects
+  return lrcArr
+    .filter((line) => line.trim())
+    .map((line) => ({
+      index: -1,
+      time: -1,
+      rawContent: line.trim(),
+      transContent: '',
+    }))
 }

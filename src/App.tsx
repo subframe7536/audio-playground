@@ -123,7 +123,7 @@ function PlayerInterface() {
       />
 
       {/* Main Content - Two Column Layout */}
-      <div class="relative z-10 flex h-screen p-8 md:gap-8 lg:gap-24 items-center justify-center">
+      <div class="relative z-10 flex h-screen p-8 md:gap-8 lg:gap-16 items-center justify-center">
         {/* Left Column - Album Cover, Metadata, and Controls */}
         <div class="w-96 min-w-80">
           {/* Album Cover */}
@@ -175,7 +175,7 @@ function PlayerInterface() {
         </div>
 
         {/* Right Column - Lyrics */}
-        <div class="w-160 min-w-80 flex flex-col">
+        <div class="w-180 min-w-80 flex flex-col">
           <LyricsDisplay />
         </div>
       </div>
