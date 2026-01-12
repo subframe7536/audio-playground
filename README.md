@@ -4,16 +4,17 @@ A modern web-based audio player application built with SolidJS. Upload audio fil
 
 🔒 **Privacy First**: All audio processing happens locally in your browser. No uploads, no servers, no tracking.
 
+Preview: https://audio.subf.dev
+
 ## ✨ Features
 
 - 🎵 **Audio File Upload** - Support for various audio formats (processed locally)
-- 📊 **Metadata Analysis** - Extract and display audio file information (browser-only)
-- 🎛️ **Playback Controls** - Play, pause, seek, and volume control
-- 📝 **Synchronized Lyrics** - LRC format support with auto-scrolling
+- 📊 **Metadata Analysis** - Extract and write audio file information (browser-only)
+- 🎛️ **Playback Controls** - Play, pause, seek, seemless playback, and volume control
+- 📝 **Synchronized Lyrics** - LRC format support with live sync
 - ⚡ **Waveform Visualization** - Visual audio waveform display (local processing)
 - 📱 **Responsive Design** - Works on desktop and mobile devices
 - 🔒 **Privacy First** - All processing happens in your browser, no uploads
-- 🔧 **Built with Modern Tech** - SolidJS, TypeScript, and UnoCSS
 
 ## 🛠️ Tech Stack
 
@@ -21,8 +22,8 @@ A modern web-based audio player application built with SolidJS. Upload audio fil
 - **Runtime**: [Bun](https://bun.sh/) - Fast JavaScript runtime
 - **Build Tool**: [Vite](https://vitejs.dev/) with rolldown-vite variant
 - **Styling**: [UnoCSS](https://unocss.dev/) with Wind3 preset (Tailwind-like)
-- **Audio Library**: `audio0` - ZAudio class and waveform generation
-- **Metadata Parser**: `node-taglib-sharp-extend` - Audio metadata extraction
+- **Audio Library**: `audio0` - Audio control & waveform generation
+- **Metadata Parser**: `node-taglib-sharp-extend` - Audio metadata read & write
 
 ## 📄 License
 
