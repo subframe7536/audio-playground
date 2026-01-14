@@ -4,7 +4,6 @@ import { Icon } from './icon'
 import { FormField } from './form-field'
 import { Button } from './button'
 import { TabButton } from './tab-button'
-import type { AudioMetadata } from '~/types/player'
 import {
   createFileFromBuffer,
   updateTag,
@@ -13,12 +12,11 @@ import {
   getBufferFromFile,
 } from 'node-taglib-sharp-extend'
 import { downloadFile } from '~/utils/download'
+import { usePlayerContext } from '~/context/player'
 
 interface EditMetadataDialogProps {
   isOpen: boolean
   onClose: () => void
-  metadata: AudioMetadata | null
-  originalFile: File | undefined
 }
 
 type TabType = 'metadata' | 'artwork' | 'lyric'
@@ -47,6 +45,7 @@ interface FormFieldConfig {
 }
 
 export function EditMetadataDialog(props: EditMetadataDialogProps) {
+  const { state } = usePlayerContext()
   const [activeTab, setActiveTab] = createSignal<TabType>('metadata')
   const [formState, setFormState] = createStore<MetadataFormState>({
     title: '',
@@ -95,7 +94,7 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
   // Initialize form values when metadata changes
   createEffect(
     on(
-      () => props.metadata,
+      () => state.metadata,
       (meta) => {
         if (!meta) {
           return
@@ -128,7 +127,7 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
   }
 
   const handleSave = async () => {
-    if (!props.originalFile) {
+    if (!state.currentFile) {
       alert('No audio file loaded')
       return
     }
@@ -137,11 +136,11 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
 
     try {
       // Read the original file as buffer
-      const arrayBuffer = await props.originalFile.arrayBuffer()
+      const arrayBuffer = await state.currentFile.arrayBuffer()
       const buffer = new Uint8Array(arrayBuffer)
 
       // Create taglib file from buffer
-      let file = createFileFromBuffer(props.originalFile.name, buffer)
+      let file = createFileFromBuffer(state.currentFile.name, buffer)
 
       // Update tags
       updateTag(file, 'title', formState.title)
@@ -230,8 +229,8 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
       const modifiedBuffer = getBufferFromFile(file)
 
       // Create a blob and download (ensure buffer is defined)
-      const blob = new Blob([modifiedBuffer || new Uint8Array()], { type: props.originalFile.type })
-      downloadFile(blob, props.originalFile.name.replace(/(\.[^.]+)$/, '_edited$1'))
+      const blob = new Blob([modifiedBuffer || new Uint8Array()], { type: state.currentFile.type })
+      downloadFile(blob, state.currentFile.name.replace(/(\.[^.]+)$/, '_edited$1'))
 
       props.onClose()
     } catch (error) {
@@ -335,14 +334,14 @@ export function EditMetadataDialog(props: EditMetadataDialogProps) {
                 <Match when={activeTab() === 'artwork'}>
                   <div class="space-y-6">
                     {/* Current Artwork Preview */}
-                    <Show when={props.metadata?.artwork}>
+                    <Show when={state.metadata?.artwork}>
                       <div class="space-y-2">
                         <label class="text-sm font-medium leading-none text-gray-200">
                           Current Artwork
                         </label>
                         <div class="rounded-md border border-gray-800 overflow-hidden bg-gray-800/50 p-4">
                           <img
-                            src={props.metadata!.artwork}
+                            src={state.metadata!.artwork}
                             alt="Current album artwork"
                             class="w-full max-w-md mx-auto rounded-md"
                           />

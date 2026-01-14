@@ -8,12 +8,7 @@ import {
 } from 'solid-js'
 import { createStore, produce } from 'solid-js/store'
 import { createWaveformGenerator, parseTrack, ZAudio } from 'audio0'
-import type {
-  PlayerState,
-  PlayerActions,
-  PlayerContextValue,
-  PlayerProviderProps,
-} from '~/types/player'
+import type { PlayerState, PlayerContextValue, PlayerProviderProps } from '~/types/player'
 import { parseMetadata } from '~/utils/player-utils'
 import { parseLyric } from '~/utils/parse-lyric'
 
@@ -37,7 +32,7 @@ const initialState: PlayerState = {
   isAudioReady: false,
 
   // Waveform data
-  waveform: new Array(48).fill(0.1),
+  waveform: null,
 
   // Loading state
   isLoading: false,
@@ -117,7 +112,8 @@ export function PlayerProvider(props: PlayerProviderProps) {
 
       cleanup?.()
 
-      let meta = await parseMetadata(file)
+      const buffer = await file.arrayBuffer()
+      let meta = await parseMetadata(file.name, buffer)
 
       setState(
         produce((s) => {
@@ -132,8 +128,7 @@ export function PlayerProvider(props: PlayerProviderProps) {
         }),
       )
 
-      // Load audio - handle File and URL differently
-      const buffer = await file.arrayBuffer()
+      setState('waveform', new Array(48).fill(0.1))
       createWaveformGenerator(buffer)
         .then((calc) => calc(48))
         .then((waveform) => setState('waveform', waveform))
@@ -161,7 +156,8 @@ export function PlayerProvider(props: PlayerProviderProps) {
   })
 
   // Player actions
-  const actions: PlayerActions = {
+  const contextValue: PlayerContextValue = {
+    state,
     play: async () => {
       if (!state.isAudioReady) {
         console.warn('Audio not ready yet, cannot play')
@@ -178,7 +174,7 @@ export function PlayerProvider(props: PlayerProviderProps) {
     setAudioFile,
   }
 
-  return <PlayerContext.Provider value={[state, actions]}>{props.children}</PlayerContext.Provider>
+  return <PlayerContext.Provider value={contextValue}>{props.children}</PlayerContext.Provider>
 }
 
 export function usePlayerContext(): PlayerContextValue {

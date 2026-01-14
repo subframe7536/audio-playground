@@ -29,7 +29,6 @@ function LyricLine(props: LyricLineProps) {
     }
     return Math.min(dis * 0.5, 4) * 2
   }
-  console.log(props.lyric.rawContent)
 
   return (
     <div
@@ -67,7 +66,7 @@ function LyricLine(props: LyricLineProps) {
 }
 
 export function LyricsDisplay() {
-  const [state, actions] = usePlayerContext()
+  const { state, ...actions } = usePlayerContext()
 
   const [containerRef, setContainerRef] = createSignal<HTMLDivElement>()
   const lineRefs: HTMLDivElement[] = []

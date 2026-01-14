@@ -7,7 +7,7 @@ export interface BackgroundLayerProps {
 }
 
 export function BackgroundLayer(props: BackgroundLayerProps) {
-  const [state] = usePlayerContext()
+  const { state } = usePlayerContext()
 
   // Create memoized background style
   const backgroundStyle = createMemo(() => {

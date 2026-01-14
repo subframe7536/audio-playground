@@ -66,7 +66,7 @@ export interface PlayerActions {
   hasFile: Accessor<boolean>
 }
 
-export type PlayerContextValue = readonly [PlayerState, PlayerActions]
+export type PlayerContextValue = PlayerActions & { state: PlayerState }
 
 export interface PlayerProviderProps {
   children: JSX.Element

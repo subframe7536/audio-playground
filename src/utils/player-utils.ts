@@ -8,11 +8,10 @@ import type { AudioMetadata } from '~/types/player'
 /**
  * Extract metadata from an audio file
  */
-export async function parseMetadata(file: File): Promise<AudioMetadata> {
+export async function parseMetadata(name: string, buffer: ArrayBuffer): Promise<AudioMetadata> {
   try {
-    const buffer = await file.arrayBuffer()
     const uint8Buffer = new Uint8Array(buffer)
-    const tagFile = createFileFromBuffer(file.name, uint8Buffer)
+    const tagFile = createFileFromBuffer(name, uint8Buffer)
     const { tag, property, quality, pictures } = parseTagMetadata(tagFile)
 
     let artwork: string | undefined
@@ -24,7 +23,7 @@ export async function parseMetadata(file: File): Promise<AudioMetadata> {
     return {
       ...tag,
       ...property,
-      title: tag.title || file.name.replace(/\.[^/.]+$/, ''),
+      title: tag.title || name.replace(/\.[^/.]+$/, ''),
       artist: tag.artists?.join('; ') || 'Unknown Artist',
       album: tag.album || 'Unknown Album',
       artwork,
@@ -33,7 +32,7 @@ export async function parseMetadata(file: File): Promise<AudioMetadata> {
   } catch (error) {
     console.warn('Failed to parse metadata:', error)
     return {
-      title: file.name.replace(/\.[^/.]+$/, ''),
+      title: name.replace(/\.[^/.]+$/, ''),
       artist: 'Unknown Artist',
       album: 'Unknown Album',
       duration: 0,

@@ -5,7 +5,7 @@ import { EditMetadataDialog } from './edit-metadata-dialog'
 import { IconButton } from './icon-button'
 
 export function MetadataDisplay() {
-  const [state] = usePlayerContext()
+  const { state } = usePlayerContext()
   const [isEditDialogOpen, setIsEditDialogOpen] = createSignal(false)
   const qualityBg = createMemo(() => {
     switch (state.metadata?.quality) {
@@ -113,12 +113,7 @@ export function MetadataDisplay() {
       </div>
 
       {/* Edit Dialog */}
-      <EditMetadataDialog
-        isOpen={isEditDialogOpen()}
-        onClose={() => setIsEditDialogOpen(false)}
-        metadata={state.metadata}
-        originalFile={state.currentFile || undefined}
-      />
+      <EditMetadataDialog isOpen={isEditDialogOpen()} onClose={() => setIsEditDialogOpen(false)} />
     </>
   )
 }

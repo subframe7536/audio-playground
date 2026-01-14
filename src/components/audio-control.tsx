@@ -6,7 +6,7 @@ import { IconButton } from './icon-button'
 import { clamp } from 'audio0'
 
 export function AudioControls() {
-  const [state, actions] = usePlayerContext()
+  const { state, ...actions } = usePlayerContext()
   let lastVolume = 0
   // oxlint-disable-next-line no-unassigned-vars
   let seekBarRef: HTMLDivElement | undefined
@@ -155,10 +155,15 @@ export function AudioControls() {
   return (
     <>
       {/* Progress Bar */}
-      <div class="w-full mt-8 group">
+      <div class={`w-full mt-8 group ${state.waveform ? '' : 'h-3 flex items-center'}`}>
         <div
           ref={seekBarRef}
-          class={`relative w-full ${state.waveform ? 'h-12' : 'h-1 group-hover:h-2'} cursor-pointer transition-all duration-300 touch-none`}
+          class={`
+            relative w-full touch-none
+            ${state.waveform ? 'h-12' : 'h-1 bg-white/20 rounded'}
+            ${state.isAudioReady ? 'cursor-pointer' : 'pointer-events-none cursor-not-allowed'}
+            ${state.isAudioReady && !state.waveform ? 'group-hover:h-2 transition-height duration-300' : ''}
+          `}
           style={{
             '--percent': `${displayPercent()}%`,
           }}
@@ -172,9 +177,7 @@ export function AudioControls() {
           {/* Waveform Visualization */}
           <Show
             when={state.waveform}
-            fallback={
-              <div class={`absolute top-0 left-0 h-full bg-white rounded-full w-$percent`} />
-            }
+            fallback={<div class="absolute top-0 left-0 h-full bg-white rounded-full w-$percent" />}
           >
             <div
               class="absolute inset-0 flex items-center justify-between gap-1 pointer-events-none children:(flex-1 bg-white rounded-full origin-center transition-(all delay-100) duration-500 ease-out h-$hgt)"
