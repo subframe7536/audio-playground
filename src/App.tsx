@@ -1,4 +1,4 @@
-import { Show, ErrorBoundary } from 'solid-js'
+import { Show, ErrorBoundary, createSignal, createMemo } from 'solid-js'
 import { PlayerProvider, usePlayerContext } from '~/context/player'
 import { BackgroundLayer } from '~/components/background-layer'
 import { AlbumCover } from '~/components/album-cover'
@@ -29,6 +29,8 @@ function ErrorFallback(props: { error: Error; reset: () => void }) {
 // Main player interface component
 function PlayerInterface() {
   const { setAudioFile, hasFile } = usePlayerContext()
+  const [downloadProgress, setDownloadProgress] = createSignal<number | null>(null)
+  const isLoadingDemo = createMemo(() => downloadProgress() !== null)
   let fileInputRef: HTMLInputElement
 
   const handleClearFile = () => {
@@ -37,13 +39,45 @@ function PlayerInterface() {
 
   const handleDemoMode = async () => {
     try {
-      const demo = await fetch(url).then((r) => r.arrayBuffer())
-      const file = new File([demo], 'test.ogg', { type: 'audio/ogg' })
+      setDownloadProgress(0)
 
+      const response = await fetch(url)
+      const contentLength = response.headers.get('content-length')
+      const total = contentLength ? parseInt(contentLength, 10) : 0
+      let loaded = 0
+
+      const stream = new ReadableStream({
+        start(controller) {
+          const reader = response.body!.getReader()
+
+          function read() {
+            reader.read().then(({ done, value }) => {
+              if (done) {
+                controller.close()
+                return
+              }
+              loaded += value.byteLength
+              if (total > 0) {
+                setDownloadProgress(Math.round((loaded / total) * 100))
+              }
+              controller.enqueue(value)
+              read()
+            })
+          }
+
+          read()
+        },
+      })
+
+      const newResponse = new Response(stream)
+      const demo = await newResponse.arrayBuffer()
+      const file = new File([demo], 'test.ogg', { type: 'audio/ogg' })
       setAudioFile(file)
     } catch (error) {
       console.error('Failed to create demo audio:', error)
       alert('Failed to create demo audio. Please try uploading your own file.')
+    } finally {
+      setDownloadProgress(null)
     }
   }
 
@@ -77,13 +111,22 @@ function PlayerInterface() {
       <BackgroundLayer opacity={0.7} blurIntensity={32} />
 
       {/* Top Right Controls */}
-      <div class="absolute top-4 right-4 z-20 flex gap-2">
-        <IconButton
-          icon="lucide:circle-play"
-          onClick={handleDemoMode}
-          variant="primary"
-          title="Try demo mode"
-        />
+      <div class="absolute top-4 right-4 z-20 flex gap-2 items-center">
+        <div class="relative">
+          <IconButton
+            icon={isLoadingDemo() ? 'lucide:loader-2' : 'lucide:circle-play'}
+            onClick={handleDemoMode}
+            variant="primary"
+            title="Try demo mode"
+            iconClass={isLoadingDemo() ? 'animate-spin' : ''}
+            disabled={isLoadingDemo()}
+          />
+          <Show when={isLoadingDemo()}>
+            <div class="absolute top-10 right-0 bg-gray-900/80 backdrop-blur-sm px-3 py-1 rounded-lg text-xs text-white whitespace-nowrap">
+              {downloadProgress()}%
+            </div>
+          </Show>
+        </div>
         <IconButton
           icon="lucide:upload"
           onClick={handleUploadClick}

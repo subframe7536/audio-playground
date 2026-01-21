@@ -6,13 +6,17 @@ interface IconButtonProps {
   onClick: () => void
   title?: string
   variant?: 'default' | 'primary' | 'danger' | 'plain'
+  class?: string
+  iconClass?: string
+  disabled?: boolean
 }
 
 const variantClasses = {
-  default: 'bg-white/20 hover:bg-white/30',
-  primary: 'bg-blue-500/20 hover:bg-blue-500/30',
-  danger: 'bg-red-500/20 hover:bg-red-500/30',
-  plain: 'opacity-80 bg-transparent hover:(bg-white/10 opacity-100)',
+  default: 'bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed',
+  primary: 'bg-blue-500/20 hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed',
+  danger: 'bg-red-500/20 hover:bg-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed',
+  plain:
+    'opacity-80 bg-transparent hover:(bg-white/10 opacity-100) disabled:(opacity-50 cursor-not-allowed)',
 }
 
 export function IconButton(props: IconButtonProps): JSX.Element {
@@ -21,10 +25,11 @@ export function IconButton(props: IconButtonProps): JSX.Element {
   return (
     <button
       onClick={props.onClick}
-      class={`size-8 backdrop-blur-sm rounded-lg transition-all duration-200 text-gray-200 line-height-none ${variantClasses[variant()]}`}
+      class={`size-8 backdrop-blur-sm rounded-lg transition-all duration-200 text-gray-200 line-height-none ${variantClasses[variant()]} ${props.class || ''}`}
       title={props.title}
+      disabled={props.disabled}
     >
-      <Icon name={props.icon} class="size-4" />
+      <Icon name={props.icon} class={`size-4 ${props.iconClass || ''}`} />
     </button>
   )
 }
